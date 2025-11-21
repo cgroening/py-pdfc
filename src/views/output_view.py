@@ -36,6 +36,7 @@ class OutputView:
     def print_input_values(self, settings: CompressionSettings):
         self.print_compression_settings(settings)
         self.print_paths('/this/is/the/source.pdf', '/this/is/the/target.pdf')
+        # TODO: Get the real paths
 
     def print_compression_settings(self, settings: CompressionSettings):
         """
@@ -102,7 +103,29 @@ class OutputView:
         main_table.add_row(left_table, right_table)
         self.cs.print(main_table)
 
-    def print_paths(self, source: str, target: str | None = None):
-        pass
+    def print_paths(self, source: str, target: str):
+        """
+        Prints the source and target paths in a formatted table.
 
+        Parameters
+        ----------
+        source : str
+            The source file path.
+        target : str
+            The target file path.
 
+        """
+        # TODO: Add if statement to check if target was given by user
+        target += '\n[yellow](generated because not given)[/yellow]'
+
+        # Table without header
+        table = Table(show_header=False, show_lines=True)
+        table.add_column('Path type', style='bold magenta', no_wrap=True)
+        table.add_column('Path type', style='', no_wrap=False)
+
+        # Add source and target paths
+        table.add_row('Source Path:', source)
+        if target:
+            table.add_row('Target Path:', target)
+
+        self.cs.print(table)

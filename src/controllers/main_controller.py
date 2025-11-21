@@ -232,9 +232,8 @@ class MainController:
 
             compression_settings.validate()
             self.output_view.show_success('Compression settings are valid.')
-            self.output_view.print_compression_settings(compression_settings)
+            self.output_view.print_input_values(compression_settings)
 
-            # TODO: file path(s)
 
             # # Process data
             # processor = PersonProcessor(person, args.subcommand)
