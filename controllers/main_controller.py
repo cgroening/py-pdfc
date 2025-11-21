@@ -2,7 +2,7 @@
 Main controller coordinating between model and views.
 """
 import argparse
-from models.compression_settings_model import Person, PersonProcessor
+from models.compression_settings_model import CompressionSettings, PersonProcessor
 from views.output_view import OutputView
 from views.input_view import InputView
 
@@ -186,7 +186,7 @@ class MainController:
             verbose = self.input_view.prompt_verbose()
 
             # Create model and process
-            person = Person(name=name, age=age, cars=cars)
+            person = CompressionSettings(name=name, age=age, cars=cars)
             processor = PersonProcessor(person, mode)
             result = processor.process()
 
@@ -208,7 +208,7 @@ class MainController:
         """
         try:
             # Create model from CLI arguments
-            person = Person(
+            person = CompressionSettings(
                 name=args.name,
                 age=args.age,
                 cars=args.cars

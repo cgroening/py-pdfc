@@ -1,69 +1,72 @@
 """
 Model for person data and business logic.
 """
+from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
 
 
-@dataclass
-class Person:
-    """Data class for person information."""
-    name: str
-    age: Optional[int] = None
-    cars: Optional[list[str]] = None
+class CompressionMode(Enum):
+    COLOR = 'color'
+    GRAY = 'gray'
+    BW = 'bw'
 
-    def transform_name(self, mode: str) -> str:
+
+@dataclass(slots=True, frozen=True)
+class CompressionSettings:
+    """Data class for the compression settings."""
+    _mode: Optional[str] = None
+    dpi: Optional[int] = None
+    jpeg_quality: Optional[int] = None
+    bw_threshold: Optional[int] = None
+    sharpen: Optional[bool] = None
+    contrast: Optional[float] = None
+    _unsharp_mask: Optional[bool] = None
+    png_compression: Optional[int] = None
+    _tiff_ccitt: Optional[bool] = None
+
+
+    def validate(self) -> None:
         """
-        Transform the name based on the mode.
-
-        Parameters
-        ----------
-        mode : str
-            Either 'upper' or 'lower'
-
-        Returns
-        -------
-        str
-            Transformed name
+        Validates the compression settings.
+        Raises ValueError if any setting is invalid.
         """
-        match mode:
-            case 'upper':
-                return self.name.upper()
-            case 'lower':
-                return self.name.lower()
+        if self.dpi is not None and (self.dpi <= 0):
+            raise ValueError("DPI must be a positive integer.")
+        if self.jpeg_quality is not None and not (1 <= self.jpeg_quality <= 100):
+            raise ValueError("JPEG quality must be between 1 and 100.")
+        if self.bw_threshold is not None and not (0 <= self.bw_threshold <= 255):
+            raise ValueError("Threshold must be between 0 and 255.")
+        if self.sharpen is not None and not (0.0 <= self.sharpen <= 3.0):
+            raise ValueError("Sharpen must be between 0.0 and 3.0.")
+        if self.contrast is not None and not (0.0 <= self.contrast <= 3.0):
+            raise ValueError("Contrast must be between 0.0 and 3.0.")
+        if self.png_compression is not None and not (0 <= self.png_compression <= 9):
+            raise ValueError("PNG compression level must be between 0 and 9.")
+
+    def get_mode(self) -> CompressionMode | None:
+        """
+        Returns the compression mode which can be 'color', 'gray' or 'bw.'
+        """
+        match self._mode:
+            case 'color':
+                return CompressionMode.COLOR
+            case 'gray':
+                return CompressionMode.GRAY
+            case 'bw':
+                return CompressionMode.BW
             case _:
-                return self.name
+                return CompressionMode.BW
 
-
-class PersonProcessor:
-    """Business logic for processing person data."""
-
-    def __init__(self, person: Person, mode: str):
+    def get_unsharp_mask(self) -> bool:
         """
-        Initialize the processor.
-
-        Parameters
-        ----------
-        person : Person
-            The person data to process
-        mode : str
-            The transformation mode ('upper' or 'lower')
+        Returns whether unsharp mask is applied.
         """
-        self.person = person
-        self.mode = mode
+        return bool(self._unsharp_mask)
 
-    def process(self) -> Person:
+    def get_tiff_ccitt(self) -> bool:
         """
-        Processes the person data.
+        Returns whether TIFF CCITT compression is applied.
+        """
+        return bool(self._tiff_ccitt)
 
-        Returns
-        -------
-        Person
-            Person with transformed name
-        """
-        transformed_name = self.person.transform_name(self.mode)
-        return Person(
-            name=transformed_name,
-            age=self.person.age,
-            cars=self.person.cars
-        )

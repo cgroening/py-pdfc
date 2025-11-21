@@ -4,7 +4,7 @@ Output view using Rich for formatted display.
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from models.compression_settings_model import Person
+from models.compression_settings_model import CompressionSettings
 
 
 class OutputView:
@@ -14,7 +14,7 @@ class OutputView:
         """Initializes the console."""
         self.console = Console()
 
-    def show_result(self, person: Person, verbose: bool = False):
+    def show_result(self, person: CompressionSettings, verbose: bool = False):
         """
         Displays the person data.
 
@@ -30,7 +30,7 @@ class OutputView:
         else:
             self._show_compact(person)
 
-    def _show_verbose(self, person: Person):
+    def _show_verbose(self, person: CompressionSettings):
         """Shows detailed table format."""
         table = Table(title='Person Information', show_header=True,
                      header_style='bold magenta')
@@ -43,7 +43,7 @@ class OutputView:
 
         self.console.print(table)
 
-    def _show_compact(self, person: Person):
+    def _show_compact(self, person: CompressionSettings):
         """Shows compact format."""
         cars_str = ', '.join(person.cars) if person.cars else 'None'
         output = f'{person.name}; {person.age}; {cars_str}'
