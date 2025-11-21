@@ -4,19 +4,19 @@ Output view using Rich for formatted display.
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from models.person_model import Person
+from models.compression_settings_model import Person
 
 
 class OutputView:
     """Handles all output formatting using Rich."""
 
     def __init__(self):
-        """Initialize the console."""
+        """Initializes the console."""
         self.console = Console()
 
     def show_result(self, person: Person, verbose: bool = False):
         """
-        Display the person data.
+        Displays the person data.
 
         Parameters
         ----------
@@ -31,7 +31,7 @@ class OutputView:
             self._show_compact(person)
 
     def _show_verbose(self, person: Person):
-        """Show detailed table format."""
+        """Shows detailed table format."""
         table = Table(title='Person Information', show_header=True,
                      header_style='bold magenta')
         table.add_column('Field', style='cyan', width=12)
@@ -44,14 +44,14 @@ class OutputView:
         self.console.print(table)
 
     def _show_compact(self, person: Person):
-        """Show compact format."""
+        """Shows compact format."""
         cars_str = ', '.join(person.cars) if person.cars else 'None'
         output = f'{person.name}; {person.age}; {cars_str}'
         self.console.print(Panel(output, title='Result', border_style='blue'))
 
     def show_error(self, message: str):
         """
-        Display an error message.
+        Displays an error message.
 
         Parameters
         ----------
@@ -62,7 +62,7 @@ class OutputView:
 
     def show_info(self, message: str):
         """
-        Display an info message.
+        Displays an info message.
 
         Parameters
         ----------

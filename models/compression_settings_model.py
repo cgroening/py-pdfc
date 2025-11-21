@@ -15,12 +15,12 @@ class Person:
     def transform_name(self, mode: str) -> str:
         """
         Transform the name based on the mode.
-        
+
         Parameters
         ----------
         mode : str
             Either 'upper' or 'lower'
-            
+
         Returns
         -------
         str
@@ -37,11 +37,11 @@ class Person:
 
 class PersonProcessor:
     """Business logic for processing person data."""
-    
+
     def __init__(self, person: Person, mode: str):
         """
         Initialize the processor.
-        
+
         Parameters
         ----------
         person : Person
@@ -51,11 +51,11 @@ class PersonProcessor:
         """
         self.person = person
         self.mode = mode
-    
+
     def process(self) -> Person:
         """
-        Process the person data.
-        
+        Processes the person data.
+
         Returns
         -------
         Person
