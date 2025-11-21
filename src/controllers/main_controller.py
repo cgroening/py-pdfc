@@ -220,13 +220,13 @@ class MainController:
             # Create model from CLI arguments
             compression_settings = CompressionSettings(
                 _mode=args.mode,
-                dpi=args.dpi,
-                jpeg_quality=args.jpeg_quality,
-                bw_threshold=args.threshold,
-                sharpen=args.sharpen,
-                contrast=args.contrast,
+                _dpi=args.dpi,
+                _jpeg_quality=args.jpeg_quality,
+                _bw_threshold=args.threshold,
+                _sharpen=args.sharpen,
+                _contrast=args.contrast,
                 _unsharp_mask=args.unsharp_mask,
-                png_compression=args.png_compression_level,
+                _png_compression=args.png_compression_level,
                 _tiff_ccitt=args.tiff_ccitt
             )
 
