@@ -27,7 +27,6 @@ class OutputView:
     cs: Console
 
 
-
     def __init__(self):
         """Initializes the console."""
         self.cs = Console()

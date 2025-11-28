@@ -176,38 +176,23 @@ class MainController:
         args = self.parser.parse_args()
 
         if args.interactive:
-            self._run_interactive_mode()
+            compression_settings = self._run_interactive_mode()
         else:
-            self._run_cli_mode(args)
+            compression_settings = self._run_cli_mode(args)
 
-    # def _run_interactive_mode(self):
-    #     """Handles interactive mode with questionary prompts."""
+        compression_settings.validate()
+        self.output_view.show_success('Compression settings are valid.')
+        self.output_view.print_input_values(compression_settings)
 
-    #     # TODO:
 
-    #     try:
-    #         self.output_view.show_info('Starting interactive mode...\n')
+        # # Process data
+        # processor = PersonProcessor(person, args.subcommand)
+        # result = processor.process()
 
-    #         # Collect input via prompts
-    #         mode = self.input_view.prompt_mode()
-    #         name = self.input_view.prompt_name()
-    #         age = self.input_view.prompt_age()
-    #         cars = self.input_view.prompt_cars()
-    #         verbose = self.input_view.prompt_verbose()
+        # # Display result
+        # self.output_view.show_result(result, args.verbose)
 
-    #         # Create model and process
-    #         person = CompressionSettings(name=name, age=age, cars=cars)
-    #         processor = PersonProcessor(person, mode)
-    #         result = processor.process()
-
-    #         # Display result
-    #         self.output_view.show_result(result, verbose)
-    #     except KeyboardInterrupt:
-    #         self.output_view.show_info('\nInteractive mode cancelled.')
-    #     except Exception as e:
-    #         self.output_view.show_error(f'An error occurred: {str(e)}')
-
-    def _run_cli_mode(self, args):
+    def _run_cli_mode(self, args: argparse.Namespace) -> CompressionSettings:
         """
         Handles CLI mode with command line arguments.
 
@@ -216,6 +201,7 @@ class MainController:
         args : argparse.Namespace
             Parsed command line arguments
         """
+        compression_settings = None
         try:
             # Create model from CLI arguments
             compression_settings = CompressionSettings(
@@ -229,18 +215,45 @@ class MainController:
                 _png_compression=args.png_compression_level,
                 _tiff_ccitt=args.tiff_ccitt
             )
-
-            compression_settings.validate()
-            self.output_view.show_success('Compression settings are valid.')
-            self.output_view.print_input_values(compression_settings)
-
-
-            # # Process data
-            # processor = PersonProcessor(person, args.subcommand)
-            # result = processor.process()
-
-            # # Display result
-            # self.output_view.show_result(result, args.verbose)
-
         except Exception as e:
             self.output_view.show_error(f'An error occurred: {str(e)}')
+
+        if compression_settings is None:
+            raise ValueError("Compression settings could not be created.")
+
+        return compression_settings
+
+    def _run_interactive_mode(self):
+        """Handles interactive mode with questionary prompts."""
+
+        try:
+            self.output_view.show_info('Starting interactive mode...\n')
+            mode = self.input_view.prompt_mode()
+            dpi = self.input_view.prompt_dpi()
+            jpeg_quality = self.input_view.prompt_jpeg_quality()
+            png_compression = self.input_view.prompt_png_compression()
+            bw_threshold = self.input_view.prompt_bw_threshold()
+            sharpen = self.input_view.prompt_sharpen()
+            contrast = self.input_view.prompt_contrast()
+            unsharp_mask = self.input_view.prompt_unsharp_mask()
+            tiff_ccitt = self.input_view.prompt_tiff_ccitt()
+        except KeyboardInterrupt:
+            self.output_view.show_info('\nInteractive mode cancelled.')
+            mode = None
+        except Exception as e:
+            self.output_view.show_error(f'An error occurred: {str(e)}')
+            mode = None
+
+        compression_settings = CompressionSettings(
+            _mode=mode,                        # type: ignore
+            _dpi=dpi,                          # type: ignore
+            _jpeg_quality=jpeg_quality,        # type: ignore
+            _bw_threshold=bw_threshold,        # type: ignore
+            _sharpen=sharpen,                  # type: ignore
+            _contrast=contrast,                # type: ignore
+            _unsharp_mask=unsharp_mask,        # type: ignore
+            _png_compression=png_compression,  # type: ignore
+            _tiff_ccitt=tiff_ccitt             # type: ignore
+        )
+
+        return compression_settings
