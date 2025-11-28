@@ -15,7 +15,18 @@ from models.compression_settings_model import CompressionSettings
 
 
 class OutputView:
-    """Handles all output formatting using Rich."""
+    """
+    Handles all output formatting using Rich.
+
+    Attributes
+    ----------
+    cs : Console
+        The console instance used for output.
+
+    """
+    cs: Console
+
+
 
     def __init__(self):
         """Initializes the console."""
