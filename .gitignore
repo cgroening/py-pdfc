@@ -11,6 +11,11 @@
 **/*.log
 log/
 *ignore/
+temp/
+_temp/
+tmp/
+temp-*/
+tmp-*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
