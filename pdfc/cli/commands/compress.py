@@ -1,4 +1,8 @@
-import argparse
+"""
+Compress command: receives typed CLI arguments and dispatches to the service.
+"""
+from pathlib import Path
+from typing import Optional
 from pdfc.domain.models import CompressionSettings
 from pdfc.cli.output import OutputView
 from pdfc.cli.input import InputView
@@ -9,9 +13,9 @@ class CompressCommand:
     """
     CLI command for compressing a PDF file.
 
-    Receives parsed arguments, builds the compression settings, delegates
-    processing to the service and displays the result via the output view.
-    Contains no business logic.
+    Receives typed arguments from the CLI layer, builds the compression
+    settings, delegates processing to the service and displays the result
+    via the output view. Contains no business logic.
 
     Attributes
     ----------
@@ -38,19 +42,39 @@ class CompressCommand:
         self._output = output
         self._input = input_view
 
-    def run(self, args: argparse.Namespace) -> None:
+    def run(
+        self,
+        interactive: bool,
+        input_path: Path,
+        output_path: Optional[Path],
+        mode: Optional[str],
+        dpi: Optional[int],
+        jpeg_quality: Optional[int],
+        threshold: Optional[int],
+        sharpen: Optional[float],
+        contrast: Optional[float],
+        unsharp_mask: bool,
+        png_compression_level: Optional[int],
+        tiff_ccitt: bool,
+        verbose: bool,
+    ) -> None:
         """
         Runs the compress command.
-
-        Parameters
-        ----------
-        args : argparse.Namespace
-            Parsed command line arguments.
         """
-        if args.interactive:
+        if interactive:
             settings = self._run_interactive_mode()
         else:
-            settings = self._run_cli_mode(args)
+            settings = self._run_cli_mode(
+                mode=mode,
+                dpi=dpi,
+                jpeg_quality=jpeg_quality,
+                threshold=threshold,
+                sharpen=sharpen,
+                contrast=contrast,
+                unsharp_mask=unsharp_mask,
+                png_compression_level=png_compression_level,
+                tiff_ccitt=tiff_ccitt,
+            )
 
         try:
             self._service.process(settings)
@@ -61,14 +85,20 @@ class CompressCommand:
         self._output.show_success('Compression settings are valid.')
         self._output.print_input_values(settings)
 
-    def _run_cli_mode(self, args: argparse.Namespace) -> CompressionSettings:
+    def _run_cli_mode(
+        self,
+        mode: Optional[str],
+        dpi: Optional[int],
+        jpeg_quality: Optional[int],
+        threshold: Optional[int],
+        sharpen: Optional[float],
+        contrast: Optional[float],
+        unsharp_mask: bool,
+        png_compression_level: Optional[int],
+        tiff_ccitt: bool,
+    ) -> CompressionSettings:
         """
-        Builds CompressionSettings from CLI arguments.
-
-        Parameters
-        ----------
-        args : argparse.Namespace
-            Parsed command line arguments.
+        Builds CompressionSettings from typed CLI arguments.
 
         Returns
         -------
@@ -77,15 +107,15 @@ class CompressCommand:
         """
         try:
             return CompressionSettings(
-                _mode=args.mode,
-                _dpi=args.dpi,
-                _jpeg_quality=args.jpeg_quality,
-                _bw_threshold=args.threshold,
-                _sharpen=args.sharpen,
-                _contrast=args.contrast,
-                _unsharp_mask=args.unsharp_mask,
-                _png_compression=args.png_compression_level,
-                _tiff_ccitt=args.tiff_ccitt,
+                _mode=mode,
+                _dpi=dpi,
+                _jpeg_quality=jpeg_quality,
+                _bw_threshold=threshold,
+                _sharpen=sharpen,
+                _contrast=contrast,
+                _unsharp_mask=unsharp_mask,
+                _png_compression=png_compression_level,
+                _tiff_ccitt=tiff_ccitt,
             )
         except Exception as e:
             self._output.show_error(f'An error occurred: {str(e)}')

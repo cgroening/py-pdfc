@@ -1,116 +1,119 @@
-import argparse
+"""
+pdfc - PDF Compressor
+
+Entry point and composition root: wires all layers together and dispatches
+to the compress command.
+
+Examples
+--------
+CLI Mode:
+    pdfc input.pdf output.pdf -m bw -d 300
+
+Interactive Mode:
+    pdfc -i input.pdf
+
+Help:
+    pdfc --help
+"""
+import typer
+from pathlib import Path
+from typing import Optional
 from pdfc.cli.output import OutputView
 from pdfc.cli.input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.services.compression_service import CompressionService
 
 
-def _build_parser() -> argparse.ArgumentParser:
-    """Builds and returns the argument parser."""
-    parser = argparse.ArgumentParser(
-        prog='pdfc',
-        usage='pdfc [-i] [options] input_path [output_path]',
-        description=(
-            'Compress and optimize PDF files using various algorithms and '
-            'settings.'
-        ),
-        epilog='Use -i for interactive mode or -h for help.',
-    )
+app = typer.Typer(
+    help='Compress and optimize PDF files using various algorithms and settings.',
+    epilog='Use -i for interactive mode or --help for help.',
+)
 
-    parser.add_argument(
-        '-i', '--interactive',
+
+# Dependency composition (Composition Root)
+_output = OutputView()
+_input_view = InputView()
+_service = CompressionService()
+_command = CompressCommand(_service, _output, _input_view)
+
+
+@app.command()
+def compress(
+    input_path: Path = typer.Argument(
+        ...,
+        help='Path to the input PDF file',
+    ),
+    output_path: Optional[Path] = typer.Argument(
+        None,
+        help='Path to the output file (automatically set if not provided)',
+    ),
+    interactive: bool = typer.Option(
+        False, '-i', '--interactive',
         help='Start in interactive mode',
-        action='store_true',
-    )
-    parser.add_argument(
-        '-v', '--verbose',
+    ),
+    verbose: bool = typer.Option(
+        False, '-v', '--verbose',
         help='Verbose output',
-        action='store_true',
-        required=False,
-    )
-    parser.add_argument(
-        '-m', '--mode',
+    ),
+    mode: Optional[str] = typer.Option(
+        None, '-m', '--mode',
         help='Compression mode (color, gray, bw)',
-        type=str,
-        required=False,
-    )
-    parser.add_argument(
-        '-d', '--dpi',
+    ),
+    dpi: Optional[int] = typer.Option(
+        None, '-d', '--dpi',
         help='DPI - resolution for image downsampling',
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        '-q', '--jpeg-quality',
+    ),
+    jpeg_quality: Optional[int] = typer.Option(
+        None, '-q', '--jpeg-quality',
         help='Compression quality for JPEG (1-100)',
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        '-t', '--threshold',
+    ),
+    threshold: Optional[int] = typer.Option(
+        None, '-t', '--threshold',
         help='Threshold for black and white conversion (0-255)',
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        '-s', '--sharpen',
+    ),
+    sharpen: Optional[float] = typer.Option(
+        None, '-s', '--sharpen',
         help='Sharpening filter (0.0 to 3.0)',
-        type=float,
-        required=False,
-    )
-    parser.add_argument(
-        '-c', '--contrast',
+    ),
+    contrast: Optional[float] = typer.Option(
+        None, '-c', '--contrast',
         help='Contrast (0.0 to 3.0)',
-        type=float,
-        required=False,
-    )
-    parser.add_argument(
-        '-u', '--unsharp_mask',
+    ),
+    unsharp_mask: bool = typer.Option(
+        False, '-u', '--unsharp-mask',
         help='Apply unsharp mask filter to enhance sharpness',
-        action='store_true',
-        required=False,
-    )
-    parser.add_argument(
-        '-p', '--png-compression-level',
+    ),
+    png_compression_level: Optional[int] = typer.Option(
+        None, '-p', '--png-compression-level',
         help=(
-            'PNG compression level (0–9, higher values reduce file size but '
+            'PNG compression level (0-9, higher values reduce file size but '
             'increase processing time); if not set, JPEG is used'
         ),
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        '-T', '--tiff-ccitt',
+    ),
+    tiff_ccitt: bool = typer.Option(
+        False, '-T', '--tiff-ccitt',
         help='Use TIFF with CCITT Group 4 compression for BW images',
-        action='store_true',
-        required=False,
+    ),
+):
+    _command.run(
+        interactive=interactive,
+        input_path=input_path,
+        output_path=output_path,
+        mode=mode,
+        dpi=dpi,
+        jpeg_quality=jpeg_quality,
+        threshold=threshold,
+        sharpen=sharpen,
+        contrast=contrast,
+        unsharp_mask=unsharp_mask,
+        png_compression_level=png_compression_level,
+        tiff_ccitt=tiff_ccitt,
+        verbose=verbose,
     )
-    parser.add_argument(
-        'input_path',
-        help='Path to the input PDF file',
-    )
-    parser.add_argument(
-        'output_path',
-        help='Path to the output file (automatically set if not provided)',
-        nargs='?',
-        default=None,
-    )
-
-    return parser
 
 
 def main() -> None:
-    """Entry point: parse args, wire dependencies and run the command."""
-    # Dependency composition (Composition Root)
-    output = OutputView()
-    input_view = InputView()
-    service = CompressionService()
-    command = CompressCommand(service, output, input_view)
-
-    # Parse and dispatch
-    parser = _build_parser()
-    args = parser.parse_args()
-    command.run(args)
+    app()
 
 
 if __name__ == '__main__':
