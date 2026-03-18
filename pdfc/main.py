@@ -1,116 +1,159 @@
 """
 pdfc - PDF Compressor
 
-Entry point and composition root: wires all layers together and dispatches
-to the compress command.
+Entry point and composition root: wires all layers together and defines
+the two CLI subcommands (compress / compare).
 
 Examples
 --------
-CLI Mode:
-    pdfc input.pdf output.pdf -m bw -d 300
+Compress a single file:
+    pdfc compress input.pdf -m bw -d 300
 
-Interactive Mode:
-    pdfc -i input.pdf
+Compress all PDFs in a folder (interactive):
+    pdfc compress -i /path/to/folder
 
-Help:
-    pdfc --help
+Compare all built-in configurations:
+    pdfc compare input.pdf
+    pdfc compare /path/to/folder --dpi 200
 """
 import typer
 from pathlib import Path
 from typing import Optional
+
 from pdfc.cli.output import OutputView
 from pdfc.cli.input import InputView
 from pdfc.cli.commands.compress import CompressCommand
+from pdfc.cli.commands.compare import CompareCommand
 from pdfc.services.compression_service import CompressionService
+from pdfc.storage.pdf_compressor import PdfCompressor
 
 
 app = typer.Typer(
-    help='Compress and optimize PDF files using various algorithms and settings.',
-    epilog='Use -i for interactive mode or --help for help.',
+    help='Compress and optimise PDF files using various algorithms.',
+    no_args_is_help=True,
 )
 
-
+# ---------------------------------------------------------------------------
 # Dependency composition (Composition Root)
-_output = OutputView()
-_input_view = InputView()
-_service = CompressionService()
-_command = CompressCommand(_service, _output, _input_view)
+# ---------------------------------------------------------------------------
+_compressor      = PdfCompressor()
+_service         = CompressionService(_compressor)
+_output          = OutputView()
+_input_view      = InputView()
+_compress_cmd    = CompressCommand(_service, _output, _input_view)
+_compare_cmd     = CompareCommand(_service, _output)
 
+
+# ---------------------------------------------------------------------------
+# compress subcommand
+# ---------------------------------------------------------------------------
 
 @app.command()
 def compress(
     input_path: Path = typer.Argument(
         ...,
-        help='Path to the input PDF file',
+        help='PDF file or directory of PDF files to compress.',
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        resolve_path=True,
     ),
     output_path: Optional[Path] = typer.Argument(
         None,
-        help='Path to the output file (automatically set if not provided)',
+        help=(
+            'Output file path (single-file mode only). '
+            'Defaults to <input>-compressed.pdf.'
+        ),
     ),
     interactive: bool = typer.Option(
         False, '-i', '--interactive',
-        help='Start in interactive mode',
+        help='Collect compression settings interactively.',
     ),
     verbose: bool = typer.Option(
         False, '-v', '--verbose',
-        help='Verbose output',
+        help='Verbose output.',
     ),
     mode: Optional[str] = typer.Option(
         None, '-m', '--mode',
-        help='Compression mode (color, gray, bw)',
+        help='Compression mode: color | gray | bw.',
     ),
     dpi: Optional[int] = typer.Option(
         None, '-d', '--dpi',
-        help='DPI - resolution for image downsampling',
+        help='Resolution for rasterisation (dots per inch).',
     ),
     jpeg_quality: Optional[int] = typer.Option(
         None, '-q', '--jpeg-quality',
-        help='Compression quality for JPEG (1-100)',
-    ),
-    threshold: Optional[int] = typer.Option(
-        None, '-t', '--threshold',
-        help='Threshold for black and white conversion (0-255)',
-    ),
-    sharpen: Optional[float] = typer.Option(
-        None, '-s', '--sharpen',
-        help='Sharpening filter (0.0 to 3.0)',
-    ),
-    contrast: Optional[float] = typer.Option(
-        None, '-c', '--contrast',
-        help='Contrast (0.0 to 3.0)',
-    ),
-    unsharp_mask: bool = typer.Option(
-        False, '-u', '--unsharp-mask',
-        help='Apply unsharp mask filter to enhance sharpness',
+        help='JPEG quality 1–100. Mutually exclusive with --png-compression-level.',
     ),
     png_compression_level: Optional[int] = typer.Option(
         None, '-p', '--png-compression-level',
-        help=(
-            'PNG compression level (0-9, higher values reduce file size but '
-            'increase processing time); if not set, JPEG is used'
-        ),
+        help='PNG compression level 0–9. Mutually exclusive with --jpeg-quality.',
+    ),
+    threshold: Optional[int] = typer.Option(
+        None, '-t', '--threshold',
+        help='B&W threshold 0–255 (only used in bw mode).',
+    ),
+    sharpen: Optional[float] = typer.Option(
+        None, '-s', '--sharpen',
+        help='Sharpening factor 0.0–3.0 (0 = off).',
+    ),
+    contrast: Optional[float] = typer.Option(
+        None, '-c', '--contrast',
+        help='Contrast factor 0.0–3.0 (1.0 = no change).',
+    ),
+    unsharp_mask: bool = typer.Option(
+        False, '-u', '--unsharp-mask',
+        help='Apply PIL UnsharpMask filter.',
     ),
     tiff_ccitt: bool = typer.Option(
         False, '-T', '--tiff-ccitt',
-        help='Use TIFF with CCITT Group 4 compression for BW images',
+        help='Use TIFF CCITT Group 4 as intermediate format (bw mode only).',
     ),
 ):
-    _command.run(
+    _compress_cmd.run(
         interactive=interactive,
         input_path=input_path,
         output_path=output_path,
         mode=mode,
         dpi=dpi,
         jpeg_quality=jpeg_quality,
+        png_compression_level=png_compression_level,
         threshold=threshold,
         sharpen=sharpen,
         contrast=contrast,
         unsharp_mask=unsharp_mask,
-        png_compression_level=png_compression_level,
         tiff_ccitt=tiff_ccitt,
         verbose=verbose,
     )
 
+
+# ---------------------------------------------------------------------------
+# compare subcommand
+# ---------------------------------------------------------------------------
+
+@app.command()
+def compare(
+    input_path: Path = typer.Argument(
+        ...,
+        help='PDF file or directory of PDF files to compare.',
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        resolve_path=True,
+    ),
+    dpi: int = typer.Option(
+        300, '-d', '--dpi',
+        help='Resolution for rasterisation (dots per inch). Default: 300.',
+    ),
+    verbose: bool = typer.Option(
+        False, '-v', '--verbose',
+        help='Verbose output.',
+    ),
+):
+    _compare_cmd.run(input_path=input_path, dpi=dpi, verbose=verbose)
+
+
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     app()
