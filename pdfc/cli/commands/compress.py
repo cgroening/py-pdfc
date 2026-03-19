@@ -128,30 +128,32 @@ class CompressCommand:
     def _run_interactive_mode(self) -> CompressionSettings:
         """Collects CompressionSettings interactively via prompts."""
         self._output.show_info('Starting interactive mode…\n')
+        prompts = 0
         try:
-            mode = self._input.prompt_mode()          # 'bw' | 'gray' | 'color'
-            dpi  = self._input.prompt_dpi()
+            mode = self._input.prompt_mode();  prompts += 1  # 'bw' | 'gray' | 'color'
+            dpi  = self._input.prompt_dpi();   prompts += 1
 
             tiff_ccitt       = False
             jpeg_quality     = None
             png_compression  = None
 
             if mode == 'bw':
-                tiff_ccitt = self._input.prompt_tiff_ccitt()
+                tiff_ccitt = self._input.prompt_tiff_ccitt(); prompts += 1
 
             if not tiff_ccitt:
-                fmt = self._input.prompt_image_format()  # 'jpeg' | 'png'
+                fmt = self._input.prompt_image_format(); prompts += 1  # 'jpeg' | 'png'
                 if fmt == 'jpeg':
-                    jpeg_quality = self._input.prompt_jpeg_quality()
+                    jpeg_quality    = self._input.prompt_jpeg_quality();    prompts += 1
                 else:
-                    png_compression = self._input.prompt_png_compression()
+                    png_compression = self._input.prompt_png_compression(); prompts += 1
 
-            bw_threshold = (
-                self._input.prompt_bw_threshold() if mode == 'bw' else None
-            )
-            sharpen      = self._input.prompt_sharpen()
-            contrast     = self._input.prompt_contrast()
-            unsharp_mask = self._input.prompt_unsharp_mask()
+            bw_threshold = None
+            if mode == 'bw':
+                bw_threshold = self._input.prompt_bw_threshold(); prompts += 1
+
+            sharpen      = self._input.prompt_sharpen();      prompts += 1
+            contrast     = self._input.prompt_contrast();     prompts += 1
+            unsharp_mask = self._input.prompt_unsharp_mask(); prompts += 1
 
         except KeyboardInterrupt:
             self._output.show_info('\nInteractive mode cancelled.')
@@ -160,6 +162,9 @@ class CompressCommand:
             self._output.show_error(f'An error occurred: {e}')
             sys.exit(1)
 
+        # Remove all prompt lines from the console before printing the final settings.
+        # 2 lines for the header (info message + blank line), 1 per completed prompt
+        self._output.clear_lines(2 + prompts)
         return CompressionSettings(
             _mode=mode,
             _dpi=dpi,

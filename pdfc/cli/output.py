@@ -1,6 +1,7 @@
 """
 Output view using Rich for formatted display.
 """
+import sys
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -14,6 +15,15 @@ class OutputView:
 
     def __init__(self):
         self.cs = Console()
+
+    # ------------------------------------------------------------------
+    # Cursor helpers
+    # ------------------------------------------------------------------
+
+    def clear_lines(self, count: int) -> None:
+        """Move cursor up `count` lines and clear everything below."""
+        sys.stdout.write(f'\033[{count}A\033[0J')
+        sys.stdout.flush()
 
     # ------------------------------------------------------------------
     # Generic messages
