@@ -36,7 +36,11 @@ class CompareCommand:
             self._output.show_error('No PDF files found.')
             sys.exit(1)
 
-        configs = self._service.get_compare_configs(dpi)
+        try:
+            configs = self._service.get_compare_configs(dpi)
+        except (FileNotFoundError, ValueError) as e:
+            self._output.show_error(str(e))
+            sys.exit(1)
         total_files   = len(pdf_files)
         total_configs = len(configs)
         successful    = 0

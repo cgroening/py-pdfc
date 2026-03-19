@@ -26,6 +26,7 @@ from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
 from pdfc.services.compression_service import CompressionService
 from pdfc.storage.pdf_compressor import PdfCompressor
+from pdfc.storage.presets_storage import PresetsStorage
 
 
 app = typer.Typer(
@@ -37,7 +38,8 @@ app = typer.Typer(
 # Dependency composition (Composition Root)
 # ---------------------------------------------------------------------------
 _compressor      = PdfCompressor()
-_service         = CompressionService(_compressor)
+_presets         = PresetsStorage()
+_service         = CompressionService(_compressor, _presets)
 _output          = OutputView()
 _input_view      = InputView()
 _compress_cmd    = CompressCommand(_service, _output, _input_view)
