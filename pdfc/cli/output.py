@@ -1,7 +1,6 @@
 """
 Output view using Rich for formatted display.
 """
-import math
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -55,16 +54,15 @@ class OutputView:
         right_table.add_column('Setting', style='cyan', no_wrap=True)
         right_table.add_column('Value', style='green')
 
-        settings_dict = {k: v for k, v in settings.to_dict().items() if v != '-'}
+        settings_dict = settings.to_dict()
         names = list(settings_dict.keys())
-        offset = math.ceil(len(settings_dict) / 2)
-
-        for i in range(offset):
-            left_table.add_row(names[i], settings_dict[names[i]])
-            if i + offset < len(names):
-                right_table.add_row(names[i + offset], settings_dict[names[i + offset]])
+        for name in names[:5]:
+            left_table.add_row(name, settings_dict[name])
+        for name in names[5:]:
+            right_table.add_row(name, settings_dict[name])
 
         main_table.add_row(left_table, right_table)
+        self.cs.print()
         self.cs.print(main_table)
 
     def print_paths(self, source: Path, target: Path, target_auto: bool = False) -> None:

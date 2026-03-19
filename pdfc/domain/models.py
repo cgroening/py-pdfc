@@ -87,7 +87,12 @@ class CompressionSettings:
         return bool(self._tiff_ccitt)
 
     def to_dict(self) -> dict[str, str]:
-        """Returns settings as a display dictionary."""
+        """
+        Returns all 10 settings as a display dictionary.
+        Non-applicable fields are shown as '-'.
+        Order: Mode, DPI, Format, JPEG Quality, PNG Level (left column),
+               BW Threshold, Sharpen, Contrast, Unsharp Mask, TIFF CCITT (right).
+        """
         if self.tiff_ccitt:
             img_format = 'TIFF CCITT'
         elif self.use_png:
@@ -95,20 +100,15 @@ class CompressionSettings:
         else:
             img_format = 'JPEG'
 
-        d: dict[str, str] = {
-            'Mode': self.mode.value,
-            'DPI': str(self.dpi),
-            'Format': img_format,
+        return {
+            'Mode':         self.mode.value,
+            'DPI':          str(self.dpi),
+            'Format':       img_format,
+            'JPEG Quality': str(self.jpeg_quality) if not self.use_png and not self.tiff_ccitt else '-',
+            'PNG Level':    str(self.png_compression) if self.use_png else '-',
+            'BW Threshold': str(self.bw_threshold) if self.mode == CompressionMode.BW else '-',
+            'Sharpen':      str(self.sharpen),
+            'Contrast':     str(self.contrast),
+            'Unsharp Mask': 'Yes' if self.unsharp_mask else 'No',
+            'TIFF CCITT':   'Yes' if self.tiff_ccitt else 'No',
         }
-        if not self.tiff_ccitt:
-            if self.use_png:
-                d['PNG Level'] = str(self.png_compression)
-            else:
-                d['JPEG Quality'] = str(self.jpeg_quality)
-        if self.mode == CompressionMode.BW:
-            d['BW Threshold'] = str(self.bw_threshold)
-        d['Sharpen'] = str(self.sharpen)
-        d['Contrast'] = str(self.contrast)
-        d['Unsharp Mask'] = 'Yes' if self.unsharp_mask else 'No'
-        d['TIFF CCITT'] = 'Yes' if self.tiff_ccitt else 'No'
-        return d
