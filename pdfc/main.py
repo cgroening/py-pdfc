@@ -1,26 +1,7 @@
-"""
-pdfc - PDF Compressor
-
-Entry point and composition root: wires all layers together and defines
-the two CLI subcommands (compress / compare).
-
-Examples
---------
-Compress a single file:
-    pdfc compress input.pdf -m bw -d 300
-
-Compress all PDFs in a folder (interactive):
-    pdfc compress -i /path/to/folder
-
-Compare all built-in configurations:
-    pdfc compare input.pdf
-    pdfc compare /path/to/folder --dpi 200
-"""
 import typer
 from pathlib import Path
 from typing import Optional
 
-from pdfc.cli.output import OutputView
 from pdfc.cli.input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
@@ -34,21 +15,14 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# ---------------------------------------------------------------------------
 # Dependency composition (Composition Root)
-# ---------------------------------------------------------------------------
 _compressor      = PdfCompressor()
 _presets         = PresetsStorage()
 _service         = CompressionService(_compressor, _presets)
-_output          = OutputView()
 _input_view      = InputView()
-_compress_cmd    = CompressCommand(_service, _output, _input_view)
-_compare_cmd     = CompareCommand(_service, _output)
+_compress_cmd    = CompressCommand(_service, _input_view)
+_compare_cmd     = CompareCommand(_service,)
 
-
-# ---------------------------------------------------------------------------
-# compress subcommand
-# ---------------------------------------------------------------------------
 
 @app.command()
 def compress(
@@ -70,10 +44,6 @@ def compress(
     interactive: bool = typer.Option(
         False, '-i', '--interactive',
         help='Collect compression settings interactively.',
-    ),
-    verbose: bool = typer.Option(
-        False, '-v', '--verbose',
-        help='Verbose output.',
     ),
     mode: Optional[str] = typer.Option(
         None, '-m', '--mode',
@@ -125,13 +95,8 @@ def compress(
         contrast=contrast,
         unsharp_mask=unsharp_mask,
         tiff_ccitt=tiff_ccitt,
-        verbose=verbose,
     )
 
-
-# ---------------------------------------------------------------------------
-# compare subcommand
-# ---------------------------------------------------------------------------
 
 @app.command()
 def compare(
@@ -145,21 +110,12 @@ def compare(
     ),
     dpi: int = typer.Option(
         300, '-d', '--dpi',
-        help='Resolution for rasterisation (dots per inch). Default: 300.',
-    ),
-    verbose: bool = typer.Option(
-        False, '-v', '--verbose',
-        help='Verbose output.',
-    ),
+        help='Resolution for rasterization (dots per inch). Default: 300.',
+    )
 ):
-    _compare_cmd.run(input_path=input_path, dpi=dpi, verbose=verbose)
+    _compare_cmd.run(input_path=input_path, dpi=dpi)
 
-
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     app()
 
-
-if __name__ == '__main__':
-    main()
