@@ -1,157 +1,242 @@
 # `pdfc` – PDF Compressor for the Command Line
 
-sharpen = 0.0 bis unbegrenzt (float)
+A command-line tool for compressing and optimising PDF files using configurable
+rasterisation, colour mode, sharpening, and contrast settings.
 
-## Sharpen (`-s`, `-sharpen`) and Contrast (`-c`, `-contrast`)
+## Requirements
 
-### Praktische Bereiche
+- Python 3.11+
+- [Poppler](https://poppler.freedesktop.org/) (for `pdf2image`)
+  - macOS: `brew install poppler`
+  - Ubuntu/Debian: `sudo apt install poppler-utils`
 
-| Wert | Effekt | Verwendung |
-|------|--------|------------|
-| **0.0** | Komplett unscharf (blur) | Nicht empfohlen |
-| **0.5** | Leicht unscharf | Rauschreduzierung |
-| **1.0** | Original (keine Änderung) | Baseline |
-| **1.2-1.5** | Leichte Schärfung | ✅ Empfohlen für normale Dokumente |
-| **1.5-2.0** | Mittlere Schärfung | ✅ Gut für Text |
-| **2.0-2.5** | Starke Schärfung | Für sehr unscharfe Scans |
-| **2.5-3.0** | Sehr starke Schärfung | ⚠️ Risiko von Artefakten |
-| **>3.0** | Extreme Schärfung | ❌ Meist zu viel, Artefakte |
+## Installation
 
-### Visuelle Effekte
+```bash
+pip install .
+```
 
-sharpen = 0.5:   T e x t   (verschwommen)
-sharpen = 1.0:   Text      (original)
-sharpen = 1.5:   Text      (klarer, schärfer)
-sharpen = 2.0:   Text      (sehr scharf)
-sharpen = 3.0:   Text      (zu scharf, Halos/Kanten-Artefakte)
+For development (includes pytest, coverage):
 
-contrast = 0.0 bis unbegrenzt (float)
+```bash
+pip install ".[dev]"
+```
 
+## Commands
 
-### Praktische Bereiche
+### `compress` – Compress one or more PDF files
 
-| Wert | Effekt | Verwendung |
-|------|--------|------------|
-| **0.0** | Komplett grau (kein Kontrast) | Nicht sinnvoll |
-| **0.5** | Reduzierter Kontrast | Weichere Bilder |
-| **1.0** | Original (keine Änderung) | Baseline |
-| **1.2-1.5** | Leicht erhöhter Kontrast | ✅ Empfohlen für normale Dokumente |
-| **1.5-2.0** | Mittlerer Kontrast | ✅ Gut für Text, klare Trennung |
-| **2.0-2.5** | Starker Kontrast | Für verblasste Dokumente |
-| **2.5-3.0** | Sehr starker Kontrast | ⚠️ Kann Details verlieren |
-| **>3.0** | Extremer Kontrast | ❌ Nur schwarz/weiß, Details gehen verloren |
+```
+pdfc compress [OPTIONS] INPUT_PATH [OUTPUT_PATH]
+```
 
-### Visuelle Effekte
+| Argument / Option | Short | Description |
+|---|---|---|
+| `INPUT_PATH` | | PDF file or directory of PDF files to compress |
+| `OUTPUT_PATH` | | Output file (single-file mode only). Defaults to `<input>-compressed.pdf` |
+| `--interactive` | `-i` | Collect all settings interactively via prompts |
+| `--verbose` | `-v` | Verbose output |
+| `--mode` | `-m` | Colour mode: `color`, `gray`, or `bw` |
+| `--dpi` | `-d` | Resolution for rasterisation in dots per inch (default: 300) |
+| `--jpeg-quality` | `-q` | JPEG quality 1–100 (default: 30). Mutually exclusive with `--png-compression-level` |
+| `--png-compression-level` | `-p` | PNG compression level 0–9 (default: 6). Mutually exclusive with `--jpeg-quality` |
+| `--threshold` | `-t` | B&W threshold 0–255 (default: 150). Only used in `bw` mode |
+| `--sharpen` | `-s` | Sharpening factor 0.0–3.0 (default: 0.0 = off) |
+| `--contrast` | `-c` | Contrast factor 0.0–3.0 (default: 1.0 = no change) |
+| `--unsharp-mask` | `-u` | Apply PIL UnsharpMask filter |
+| `--tiff-ccitt` | `-T` | Use TIFF CCITT Group 4 as intermediate format (`bw` mode only) |
 
-contrast = 0.5:  Text  (verwaschen, grau)
+**Examples:**
+
+```bash
+# Compress a single file to B&W at 300 DPI
+pdfc compress input.pdf -m bw -d 300
+
+# Compress with a custom output path
+pdfc compress input.pdf output.pdf -m gray -d 200 -q 50
+
+# Compress all PDFs in a folder using defaults
+pdfc compress /path/to/folder
+
+# Choose settings interactively
+pdfc compress input.pdf -i
+```
+
+### `compare` – Compare compression configurations side by side
+
+Runs all presets defined in `~/.config/pdfc/presets.yaml` against one or more
+PDF files and writes the results into a subdirectory named after each input file.
+
+```
+pdfc compare [OPTIONS] INPUT_PATH
+```
+
+| Option | Short | Description |
+|---|---|---|
+| `--dpi` | `-d` | Resolution for rasterisation (default: 300) |
+| `--verbose` | `-v` | Verbose output |
+
+**Examples:**
+
+```bash
+# Compare all presets for a single file
+pdfc compare input.pdf
+
+# Compare all presets for all PDFs in a folder at 200 DPI
+pdfc compare /path/to/folder --dpi 200
+```
+
+Output is written to a subdirectory next to the input file:
+
+```
+input.pdf
+input/
+  preset-name-1.pdf
+  preset-name-2.pdf
+  ...
+```
+
+## Presets file
+
+The `compare` command reads presets from `~/.config/pdfc/presets.yaml`.
+Each preset defines a named compression configuration.
+
+```yaml
+presets:
+  - name: bw-300
+    mode: bw
+    dpi: 300
+    threshold: 150
+    sharpen: 1.5
+    contrast: 1.5
+
+  - name: gray-150
+    mode: gray
+    dpi: 150
+    jpeg_quality: 40
+
+  - name: color-200
+    mode: color
+    dpi: 200
+    jpeg_quality: 60
+    sharpen: 1.3
+    contrast: 1.3
+```
+
+Available preset fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | string | Required. Used as the output file name |
+| `mode` | string | `color`, `gray`, or `bw` |
+| `dpi` | int | Resolution for rasterisation |
+| `threshold` | int | B&W threshold 0–255 |
+| `jpeg_quality` | int | JPEG quality 1–100 |
+| `png_compression` | int | PNG compression level 0–9 |
+| `sharpen` | float | Sharpening factor 0.0–3.0 |
+| `contrast` | float | Contrast factor 0.0–3.0 |
+| `unsharp_mask` | bool | Apply PIL UnsharpMask filter |
+| `tiff_ccitt` | bool | Use TIFF CCITT Group 4 intermediate format |
+
+## Compression modes
+
+| Mode | Description |
+|---|---|
+| `color` | Keeps full colour. Best for photos and colour diagrams |
+| `gray` | Converts to greyscale. Good balance of size and readability |
+| `bw` | Converts to black & white. Smallest file size, best for text-only scans |
+
+## Parameter reference
+
+### Sharpen (`-s` / `--sharpen`)
+
+Range: 0.0 to 3.0 (float)
+
+| Value | Effect | Use case |
+|---|---|---|
+| **0.0** | No sharpening (off) | Default |
+| **0.5** | Slight blur | Noise reduction |
+| **1.0** | Original (no change) | Baseline |
+| **1.2–1.5** | Light sharpening | Recommended for clean documents |
+| **1.5–2.0** | Medium sharpening | Good for text |
+| **2.0–2.5** | Strong sharpening | For blurry scans |
+| **2.5–3.0** | Very strong sharpening | Risk of artefacts |
+| **>3.0** | Extreme (not allowed) | Too much; artefacts likely |
+
+Visual effect:
+
+```
+sharpen = 0.5:  T e x t   (blurry)
+sharpen = 1.0:  Text      (original)
+sharpen = 1.5:  Text      (crisper)
+sharpen = 2.0:  Text      (very sharp)
+sharpen = 3.0:  Text      (over-sharpened, halo artefacts)
+```
+
+**Too much sharpening (> 3.0):**
+- Halos around letters (white/black fringes)
+- Noise amplification (grainy look)
+- Edge artefacts
+- Unnatural appearance
+
+### Contrast (`-c` / `--contrast`)
+
+Range: 0.0 to 3.0 (float)
+
+| Value | Effect | Use case |
+|---|---|---|
+| **0.0** | Flat grey (no contrast) | Not useful |
+| **0.5** | Reduced contrast | Softer images |
+| **1.0** | Original (no change) | Baseline |
+| **1.2–1.5** | Slightly increased contrast | Recommended for clean documents |
+| **1.5–2.0** | Medium contrast | Good for text, clear separation |
+| **2.0–2.5** | Strong contrast | For faded documents |
+| **2.5–3.0** | Very strong contrast | Risk of detail loss |
+| **>3.0** | Extreme (not allowed) | Near binary; details lost |
+
+Visual effect:
+
+```
+contrast = 0.5:  Text  (washed out, grey)
 contrast = 1.0:  Text  (original)
-contrast = 1.5:  Text  (klarer, definierter)
-contrast = 2.0:  Text  (sehr klar, starke Trennung)
-contrast = 3.0:  Text  (extrem, fast binär)
+contrast = 1.5:  Text  (crisper, more defined)
+contrast = 2.0:  Text  (very clear, strong separation)
+contrast = 3.0:  Text  (near binary)
+```
 
-### Empfohlene Kombinationen für verschiedene Dokumententypen
+**Too much contrast (> 3.0):**
+- Detail loss (everything becomes black or white)
+- No more grey tones
+- Hard edges without transitions
+- Information loss
 
-#### Normale, saubere Dokumente
+### Interaction between contrast and threshold
 
-sharpen = 1.3
-contrast = 1.3
+Contrast is applied before the B&W threshold. A higher contrast value effectively
+makes the threshold more aggressive, since pixel values are pushed further apart
+before the cut-off is applied.
 
--> Leichte Verbesserung, kein Risiko
+| Scenario | contrast | threshold | Pixel at 140 | Pixel at 160 |
+|---|---|---|---|---|
+| Low contrast | 1.0 | 150 | stays ~140 → black | stays ~160 → white |
+| High contrast | 2.0 | 150 | pushed to ~100 → black | pushed to ~200 → white |
 
-#### Standard-Scans
+**Rule of thumb:** increase contrast only as much as needed; combine with the
+threshold to control where the black/white boundary falls.
 
-sharpen = 1.5
-contrast = 1.5
+### Recommended combinations
 
--> Beste Balance
+| Document type | sharpen | contrast | Notes |
+|---|---|---|---|
+| Clean, digital documents | 1.3 | 1.3 | Subtle improvement, no risk |
+| Standard scans | 1.5 | 1.5 | Best balance |
+| Blurry or faded scans | 2.0 | 2.0 | Strong improvement, low artefact risk |
+| Very poor scans | 2.5 | 2.5 | Maximum recommended |
+| Last resort | 3.0 | 3.0 | Artefacts likely |
 
-#### Unscharfe oder verblasste Scans
+### Recommended parameter ranges (summary)
 
-sharpen = 2.0
-contrast = 2.0
-
--> Starke Verbesserung, geringes Artefakt-Risiko
-
-#### Sehr schlechte Scans
-
-sharpen = 2.5
-contrast = 2.5
-
-Maximum empfohlen, danach wird's problematisch
-
-#### Extreme Rettung (nur wenn nötig)
-
-sharpen = 3.0
-contrast = 3.0
-
-❌ Artefakte wahrscheinlich, nur als letzter Ausweg
-
-### Was passiert bei extremen Werten?
-
-#### Zu viel Sharpening (>3.0)
-
-**Probleme:**
-- **Halos** um Buchstaben (weiße/schwarze Ränder)
-- **Rauschen-Verstärkung** (körniges Aussehen)
-- **Artefakte** an Kanten
-- **Überschärfung** (unnatürlich)
-
-**Beispiel:**
-
-Normal:     Text
-sharpen=5:  T͟e͟x͟t͟  (mit "Glühen" um Buchstaben)
-
-TODO: Screenshot
-
-### Zu viel Contrast (>3.0)
-
-**Probleme:**
-- **Detail-Verlust** (alles wird schwarz oder weiß)
-- **Keine Graustufen** mehr (vor Threshold)
-- **Harte Kanten** ohne Übergänge
-- **Informationsverlust**
-
-**Beispiel:**
-
-Normal:       Graue Schattierung um Text
-contrast=5:   Nur noch Schwarz/Weiß, keine Schattierung
-
-TODO: Screenshot
-
-###  Interaktion mit Threshold
-Wichtig: Contrast wirkt sich auf den Threshold aus!
-
-Beispiele:
-
-Szenario 1: Niedriger Contrast
-
-contrast = 1.0
-threshold = 150
-
-→ Pixel bei 140 bleiben grau → werden schwarz
-→ Pixel bei 140 bleiben grau → werden schwarz
-
-
-Szenario 2: Hoher Contrast
-
-contrast = 2.0
-threshold = 150
-
-→ Pixel bei 140 werden zu ~100 → bleiben schwarz
-→ Pixel bei 160 werden zu ~200 → werden weiß
-
-Fazit: Höherer Contrast macht den Threshold effektiv "aggressiver"
-
-Szenario 2: Hoher Contrast
-contrast = 2.0
-threshold = 150
-→ Pixel bei 140 werden zu ~100 → bleiben schwarz
-→ Pixel bei 160 werden zu ~200 → werden weiß
-Fazit: Höherer Contrast macht den Threshold effektiv "aggressiver"
-
-### Summary of Recommended Ranges
-
-|Parameter|Minimum|Recommendation|Maximum(safe)|Maximum(risky)|
-|---------|-------|--------------|--------------|--------------|
-|Sharpen  |0.0 (blur)    |1.3-2.0          |2.5           |3.0+          |
-|Contrast |0.0 (gray)    |1.3-2.0           |2.5           |3.0+          |
+| Parameter | Minimum | Recommended | Safe maximum | Risky maximum |
+|---|---|---|---|---|
+| Sharpen | 0.0 (off) | 1.3–2.0 | 2.5 | 3.0 |
+| Contrast | 0.0 (grey) | 1.3–2.0 | 2.5 | 3.0 |
