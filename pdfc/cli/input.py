@@ -8,7 +8,6 @@ class InputView:
     """Handles interactive input using Questionary."""
 
     POINTER = '⮕'
-
     MODE_CHOICES = ['B&W', 'Grayscale', 'Color']
     MODE_DEFAULT = 'B&W'
     DPI_VALUES = [72, 150, 200, 300, 400, 600]
@@ -29,6 +28,12 @@ class InputView:
     TIFF_CCITT_VALUES = ['Yes', 'No']
     TIFF_CCITT_DEFAULT = 'No'
 
+    _number_of_executed_prompts: int = 0
+
+
+    @property
+    def number_of_executed_prompts(self) -> int:
+        return self._number_of_executed_prompts
 
     def prompt_mode(self) -> str:
         """
@@ -39,6 +44,8 @@ class InputView:
         str
             One of 'bw', 'gray', 'color'.
         """
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the compression mode:',
             choices=self.MODE_CHOICES,
@@ -55,6 +62,8 @@ class InputView:
 
     def prompt_dpi(self) -> int:
         """Prompt for the DPI setting."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the DPI (dots per inch):',
             choices=[str(d) for d in self.DPI_VALUES],
@@ -72,6 +81,8 @@ class InputView:
         str
             'jpeg' or 'png'.
         """
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the image format:',
             choices=self.FORMAT_CHOICES,
@@ -82,6 +93,8 @@ class InputView:
 
     def prompt_jpeg_quality(self) -> int:
         """Prompt for the JPEG quality setting."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the JPEG quality (1–100):',
             choices=[str(q) for q in self.JPEG_QUALITY_VALUES],
@@ -92,6 +105,8 @@ class InputView:
 
     def prompt_png_compression(self) -> int:
         """Prompt for the PNG compression level."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the PNG compression level (0–9):',
             choices=[str(c) for c in self.PNG_COMPRESSION_VALUES],
@@ -102,6 +117,8 @@ class InputView:
 
     def prompt_bw_threshold(self) -> int:
         """Prompt for the black-and-white threshold."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the threshold for B&W conversion (0–255):',
             choices=[str(t) for t in self.BW_THRESHOLD_VALUES],
@@ -112,6 +129,8 @@ class InputView:
 
     def prompt_sharpen(self) -> float:
         """Prompt for the sharpening factor."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the sharpening factor (0.0 = off):',
             choices=[str(s) for s in self.SHARPEN_VALUES],
@@ -122,6 +141,8 @@ class InputView:
 
     def prompt_contrast(self) -> float:
         """Prompt for the contrast factor."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Select the contrast factor (1.0 = no change):',
             choices=[str(c) for c in self.CONTRAST_VALUES],
@@ -132,6 +153,8 @@ class InputView:
 
     def prompt_unsharp_mask(self) -> bool:
         """Prompt for unsharp mask application."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Apply unsharp mask filter?',
             choices=self.UNSHARP_MASK_VALUES,
@@ -142,6 +165,8 @@ class InputView:
 
     def prompt_tiff_ccitt(self) -> bool:
         """Prompt for TIFF CCITT Group 4 compression (B&W only)."""
+        self._number_of_executed_prompts += 1
+
         answer = questionary.select(
             'Use TIFF CCITT Group 4 compression? (best file size for B&W)',
             choices=self.TIFF_CCITT_VALUES,
@@ -149,3 +174,4 @@ class InputView:
             pointer=self.POINTER,
         ).ask()
         return answer == 'Yes'
+

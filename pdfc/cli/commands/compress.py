@@ -38,52 +38,55 @@ class CompressCommand:
         self._validate_compression_settings()
         self._find_pdf_files_in_input_path()
         self._validate_output_path()
-        self._print_compression_settings(self._compress_request.compression_settings)
+        self._print_compression_settings()
         self._process_pdf_files()
 
     def _read_compression_settings_via_interactive_mode(self) -> None:
-        """Collects CompressionSettings interactively via prompts."""
+        """
+        Collects the values for `CompressionSettings` interactively via prompts.
+        """
         if not self._compress_request.interactive_mode:
             return
 
-        print_info('Starting interactive mode…\n')
-        prompts = 0
+        input = self._input
+        print_info('Starting interactive mode…')
         try:
-            mode = self._input.prompt_mode();  prompts += 1  # 'bw' | 'gray' | 'color'
-            dpi  = self._input.prompt_dpi();   prompts += 1
+            mode = input.prompt_mode()
+            dpi  = input.prompt_dpi()
 
             tiff_ccitt       = False
             jpeg_quality     = None
             png_compression  = None
 
             if mode == 'bw':
-                tiff_ccitt = self._input.prompt_tiff_ccitt(); prompts += 1
+                tiff_ccitt = input.prompt_tiff_ccitt()
 
             if not tiff_ccitt:
-                fmt = self._input.prompt_image_format(); prompts += 1  # 'jpeg' | 'png'
+                fmt = input.prompt_image_format()
                 if fmt == 'jpeg':
-                    jpeg_quality    = self._input.prompt_jpeg_quality();    prompts += 1
+                    jpeg_quality    = input.prompt_jpeg_quality()
                 else:
-                    png_compression = self._input.prompt_png_compression(); prompts += 1
+                    png_compression = input.prompt_png_compression()
 
             bw_threshold = None
             if mode == 'bw':
-                bw_threshold = self._input.prompt_bw_threshold(); prompts += 1
+                bw_threshold = input.prompt_bw_threshold()
 
-            sharpen      = self._input.prompt_sharpen();      prompts += 1
-            contrast     = self._input.prompt_contrast();     prompts += 1
-            unsharp_mask = self._input.prompt_unsharp_mask(); prompts += 1
+            sharpen      = input.prompt_sharpen()
+            contrast     = input.prompt_contrast()
+            unsharp_mask = input.prompt_unsharp_mask()
 
         except KeyboardInterrupt:
-            print_info('\nInteractive mode cancelled.')
+            print_info('Interactive mode cancelled.')
             sys.exit(0)
         except Exception as e:
             print_error(f'An error occurred: {e}')
             sys.exit(1)
 
-        # Remove all prompt lines from the console before printing the final settings.
-        # 2 lines for the header (info message + blank line), 1 per completed prompt
-        clear_lines(2 + prompts)
+        # Remove all prompt lines from the console before printing the final
+        # settings: 6 lines for the header (info message + blank line) and
+        # 1 per completed prompt
+        clear_lines(6 + input.number_of_executed_prompts)
         self._compress_request.compression_settings = CompressionSettings(
             _mode=mode,
             _dpi=dpi,
@@ -105,7 +108,9 @@ class CompressCommand:
 
     def _find_pdf_files_in_input_path(self) -> None:
         try:
-            pdf_files = self._service.get_pdf_files(self._compress_request.input_path)
+            pdf_files = self._service.get_pdf_files(
+                self._compress_request.input_path
+            )
         except ValueError as e:
             print_error(str(e))
             sys.exit(1)
@@ -131,8 +136,7 @@ class CompressCommand:
             )
             self._compress_request.output_path = None
 
-    @staticmethod
-    def _print_compression_settings(settings: CompressionSettings) -> None:
+    def _print_compression_settings(self) -> None:
         """
         Prints the compression settings split into two side-by-side tables.
 
@@ -164,7 +168,7 @@ class CompressCommand:
         right_table.add_column('Setting', style='cyan', no_wrap=True)
         right_table.add_column('Value', style='green')
 
-        settings_dict = settings.to_dict()
+        settings_dict = self._compress_request.compression_settings.to_dict()
         names = list(settings_dict.keys())
         for name in names[:5]:
             left_table.add_row(name, settings_dict[name])
@@ -175,40 +179,48 @@ class CompressCommand:
         console.print()
         console.print(main_table)
 
-    def _process_pdf_files(self):
-        """
-        Loops through all PDF files, compressing them one by one and
-        printing results.
-        """
-        pdf_files = self._pdf_files
-        for pdf_file_path in pdf_files:
+    def _process_pdf_files(self) -> None:
+        """Loops through all PDF files and compresses them one by one."""
+        for pdf in self._pdf_files:
             output_path = self._service.get_compress_output_path(
-                pdf_file_path,
-                self._compress_request.output_path
+                pdf, self._compress_request.output_path
             )
-            self._print_paths(
-                source=pdf_file_path,
-                target=output_path,
-                target_is_generated=\
-                    self._compress_request.input_path_is_directory()
-            )
-            try:
-                self._service.compress_file(
-                    pdf_file_path,
-                    output_path,
-                    self._compress_request.compression_settings
-                )
-                original_size_kb = pdf_file_path.stat().st_size / 1024
-                compressed_size_kb = output_path.stat().st_size / 1024
+            self._compress_single_file(pdf, output_path)
 
-                if original_size_kb:
-                    savings = (1 - compressed_size_kb / original_size_kb) * 100
-                else:
-                    savings = 0.0
-                msg = f'{output_path.name}  ({compressed_size_kb:.1f} KB, {savings:.1f}% savings)'
-                print_success(msg)
-            except Exception as e:
-                print_error(f'{pdf_file_path.name}: {e}')
+    def _compress_single_file(self, pdf: Path, output_path: Path) -> None:
+        """Compresses a single PDF file and prints the result."""
+        self._print_paths(
+            source=pdf,
+            target=output_path,
+            target_is_generated=self._compress_request.input_path_is_directory()
+        )
+        try:
+            self._service.compress_file(
+                pdf, output_path, self._compress_request.compression_settings
+            )
+            self._print_compression_result(pdf, output_path)
+        except Exception as e:
+            print_error(f'{pdf.name}: {e}')
+
+    @staticmethod
+    def _print_compression_result(
+        original_file_path: Path, compressed_file_path: Path
+    ) -> None:
+        """
+        Prints the original and compressed file size and the percentage savings.
+        """
+        original_size_kb = original_file_path.stat().st_size / 1024
+        compressed_size_kb = compressed_file_path.stat().st_size / 1024
+
+        if original_size_kb:
+            savings = (1 - compressed_size_kb / original_size_kb) * 100
+        else:
+            savings = 0.0
+
+        print_success(
+            f'{compressed_file_path.name}  '
+            f'({compressed_size_kb:.1f} KB, {savings:.1f}% savings)'
+        )
 
     @staticmethod
     def _print_paths(
