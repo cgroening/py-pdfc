@@ -70,7 +70,8 @@ class CompressionService:
         """Returns the comparison output directory for `pdf_path`."""
         return pdf_input_path.parent / pdf_input_path.stem
 
-    def get_compare_configs(self, dpi: int) -> list[tuple[str, CompressionSettings]]:
+    def get_compare_configs(self, dpi: int) \
+    -> list[tuple[str, CompressionSettings]]:
         """
         Loads presets from storage and returns them as (name, settings) pairs
         with the given DPI applied to each (if DPI is not defined in config).
