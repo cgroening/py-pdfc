@@ -18,9 +18,8 @@ class CompressCommand:
     """
     CLI command for compressing one or more PDF files.
 
-    Receives typed arguments from main.py, builds CompressionSettings,
-    validates them and delegates to the service layer. Contains no
-    business logic.
+    Receives typed arguments from main.py, builds `CompressionSettings`,
+    validates them and delegates to the service layer.
     """
     _service: CompressionService
     _input: InputView
