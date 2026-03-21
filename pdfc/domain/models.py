@@ -53,7 +53,10 @@ class CompressionSettings:
 
     @property
     def use_png(self) -> bool:
-        """True if PNG should be used as intermediate format (tiff_ccitt takes priority)."""
+        """
+        True if PNG should be used as intermediate format (tiff_ccitt takes
+        priority).
+        """
         return self._png_compression is not None and not self._tiff_ccitt
 
     @property
@@ -86,6 +89,61 @@ class CompressionSettings:
     def tiff_ccitt(self) -> bool:
         return bool(self._tiff_ccitt)
 
+    @property
+    def mode_as_str(self) -> str:
+        return self.mode.value
+
+    @property
+    def dpi_as_str(self) -> str:
+        return str(self.dpi)
+
+    @property
+    def format_as_str(self) -> str:
+        if self.tiff_ccitt:
+            return 'TIFF CCITT'
+        elif self.use_png:
+            return 'PNG'
+        else:
+            return 'JPEG'
+
+    @property
+    def jpeg_quality_as_str(self) -> str:
+        if not self.use_png and not self.tiff_ccitt:
+            return str(self.jpeg_quality)
+        else:
+            return '-'
+
+    @property
+    def png_level_as_str(self) -> str:
+        if self.use_png:
+            return str(self.png_compression)
+        else:
+            return '-'
+
+    @property
+    def bw_threshold_as_str(self) -> str:
+        if self.mode == CompressionMode.BW:
+            return str(self.bw_threshold)
+        else:
+            return '-'
+
+    @property
+    def sharpen_as_str(self) -> str:
+        return str(self.sharpen)
+
+    @property
+    def contrast_as_str(self) -> str:
+        return str(self.contrast)
+
+    @property
+    def unsharp_mask_as_str(self) -> str:
+        return 'Yes' if self.unsharp_mask else 'No'
+
+    @property
+    def tiff_ccitt_as_str(self) -> str:
+        return 'Yes' if self.tiff_ccitt else 'No'
+
+
     def to_dict(self) -> dict[str, str]:
         """
         Returns all 10 settings as a display dictionary.
@@ -93,22 +151,15 @@ class CompressionSettings:
         Order: Mode, DPI, Format, JPEG Quality, PNG Level (left column),
                BW Threshold, Sharpen, Contrast, Unsharp Mask, TIFF CCITT (right).
         """
-        if self.tiff_ccitt:
-            img_format = 'TIFF CCITT'
-        elif self.use_png:
-            img_format = 'PNG'
-        else:
-            img_format = 'JPEG'
-
         return {
-            'Mode':         self.mode.value,
-            'DPI':          str(self.dpi),
-            'Format':       img_format,
-            'JPEG Quality': str(self.jpeg_quality) if not self.use_png and not self.tiff_ccitt else '-',
-            'PNG Level':    str(self.png_compression) if self.use_png else '-',
-            'BW Threshold': str(self.bw_threshold) if self.mode == CompressionMode.BW else '-',
-            'Sharpen':      str(self.sharpen),
-            'Contrast':     str(self.contrast),
-            'Unsharp Mask': 'Yes' if self.unsharp_mask else 'No',
-            'TIFF CCITT':   'Yes' if self.tiff_ccitt else 'No',
+            'Mode':         self.mode_as_str,
+            'DPI':          self.dpi_as_str,
+            'Format':       self.format_as_str,
+            'JPEG Quality': self.jpeg_quality_as_str,
+            'PNG Level':    self.png_level_as_str,
+            'BW Threshold': self.bw_threshold_as_str,
+            'Sharpen':      self.sharpen_as_str,
+            'Contrast':     self.contrast_as_str,
+            'Unsharp Mask': self.unsharp_mask_as_str,
+            'TIFF CCITT':   self.tiff_ccitt_as_str,
         }
