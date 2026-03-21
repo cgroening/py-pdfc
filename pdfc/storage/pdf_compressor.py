@@ -21,7 +21,10 @@ class PdfCompressor:
     """
 
     def compress(
-        self, input_path: Path, output_path: Path, compression_settings: CompressionSettings
+        self,
+        input_path: Path,
+        output_path: Path,
+        compression_settings: CompressionSettings
     ) -> None:
         """
         Compresses a single PDF file.
@@ -58,14 +61,33 @@ class PdfCompressor:
         tmp_dir: str,
     ) -> str:
         """Processes one page and returns the path of the temp image file."""
-        args = (image, page_number, compression_settings, tmp_dir)
+        # Enchance image based on compression mode
         match compression_settings.mode:
             case CompressionMode.BW:
-                return self._process_bw(*args)
+                converted_image = self._prepare_bw_image(
+                    image, compression_settings
+                )
             case CompressionMode.GRAY:
-                return self._process_gray(*args)
+                converted_image = image.convert('L')
+                converted_image = self._apply_enhancements(
+                    converted_image, compression_settings
+                )
             case _:  # COLOR
-                return self._process_color(*args)
+                converted_image = image.convert('RGB')
+                converted_image = self._apply_enhancements(
+                    converted_image, compression_settings
+                )
+
+        # Save the processed image in the desired format
+        args = (converted_image, tmp_dir, page_number, compression_settings)
+        if compression_settings.tiff_ccitt:
+            path = self._save_image(*args, ImageFormat.TIFF_CCITT)
+        elif compression_settings.use_png:
+            path = self._save_image(*args, ImageFormat.PNG)
+        else:
+            path = self._save_image(*args, ImageFormat.JPEG)
+
+        return path
 
     def _apply_enhancements(
         self, image: Image.Image, compression_settings: CompressionSettings
@@ -81,25 +103,6 @@ class PdfCompressor:
         if cs.sharpen > 0:
             image = ImageEnhance.Sharpness(image).enhance(cs.sharpen)
         return image
-
-    def _process_bw(
-        self,
-        image: Image.Image,
-        page_num: int,
-        compression_settings: CompressionSettings,
-        tmp_dir: str
-    ) -> str:
-        bw_image = self._prepare_bw_image(image, compression_settings)
-        args = (bw_image, tmp_dir, page_num, compression_settings)
-
-        if compression_settings.tiff_ccitt:
-            path = self._save_image(*args, ImageFormat.TIFF_CCITT)
-        elif compression_settings.use_png:
-            path = self._save_image(*args, ImageFormat.PNG)
-        else:
-            path = self._save_image(*args, ImageFormat.JPEG)
-
-        return path
 
     def _prepare_bw_image(
         self, image: Image.Image, cs: CompressionSettings
@@ -120,62 +123,6 @@ class PdfCompressor:
             return 255 if pixel > threshold else 0
 
         return gray.point(to_bw, mode='1')
-
-    def _process_gray(
-        self,
-        image: Image.Image,
-        page_num: int,
-        settings: CompressionSettings,
-        tmp_dir: str,
-    ) -> str:
-        gray = image.convert('L')
-        gray = self._apply_enhancements(gray, settings)
-
-        if settings.use_png:
-            path = os.path.join(tmp_dir, f'page_{page_num}.png')
-            gray.save(
-                path, 'PNG',
-                optimize=True,
-                compress_level=settings.png_compression,
-                dpi=(settings.dpi, settings.dpi),
-            )
-        else:
-            path = os.path.join(tmp_dir, f'page_{page_num}.jpg')
-            gray.convert('RGB').save(
-                path, 'JPEG',
-                quality=settings.jpeg_quality,
-                optimize=True,
-                dpi=(settings.dpi, settings.dpi),
-            )
-        return path
-
-    def _process_color(
-        self,
-        image: Image.Image,
-        page_num: int,
-        settings: CompressionSettings,
-        tmp_dir: str,
-    ) -> str:
-        rgb = image.convert('RGB')
-        rgb = self._apply_enhancements(rgb, settings)
-
-        if settings.use_png:
-            path = os.path.join(tmp_dir, f'page_{page_num}.png')
-            rgb.save(
-                path, 'PNG',
-                optimize=True,
-                compress_level=settings.png_compression,
-                dpi=(settings.dpi, settings.dpi),
-            )
-        else:
-            path = os.path.join(tmp_dir, f'page_{page_num}.jpg')
-            rgb.save(
-                path, 'JPEG',
-                quality=settings.jpeg_quality,
-                optimize=True,
-                dpi=(settings.dpi, settings.dpi),
-            )
-        return path
 
     @staticmethod
     def _save_image(
@@ -221,6 +168,10 @@ class PdfCompressor:
         page_number: int,
         image_format: ImageFormat
     ) -> str:
+        """
+        Generates a file path for a processed image based on the page number
+        and the image format.
+        """
         match image_format:
             case ImageFormat.TIFF_CCITT:
                 file_extension = 'tif'
