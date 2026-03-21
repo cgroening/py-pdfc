@@ -7,7 +7,7 @@ from pdfc.cli.commands.compress_input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
 from pdfc.domain.models import CompressionSettings
-from pdfc.services.compression_service import CompressionService
+from pdfc.services.compression import CompressionService
 from pdfc.storage.pdf_compressor import PdfCompressor
 from pdfc.storage.presets_storage import PresetsStorage
 

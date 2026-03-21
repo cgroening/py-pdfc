@@ -8,7 +8,7 @@ from pdfc.cli.output import (
 )
 from pdfc.cli.commands.compress_input import InputView
 from pdfc.domain.models import CompressionSettings
-from pdfc.services.compression_service import CompressionService
+from pdfc.services.compression import CompressionService
 
 
 console = Console()
@@ -182,7 +182,7 @@ class CompressCommand:
     def _process_pdf_files(self) -> None:
         """Loops through all PDF files and compresses them one by one."""
         for pdf in self._pdf_files:
-            output_path = self._service.get_compress_output_path(
+            output_path = self._service.get_output_path(
                 pdf, self._compress_request.output_path
             )
             self._compress_single_file(pdf, output_path)

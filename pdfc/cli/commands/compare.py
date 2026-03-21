@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 from pdfc.cli.output import print_error, print_info
 from pdfc.domain.models import CompressionSettings
-from pdfc.services.compression_service import CompressionService
+from pdfc.services.compression import CompressionService
 
 
 console = Console()
