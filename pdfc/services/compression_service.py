@@ -24,9 +24,12 @@ class CompressionService:
     # Compression
     # ------------------------------------------------------------------
 
-    def validate(self, settings: CompressionSettings) -> None:
+    def validate(self, settings: CompressionSettings | None) -> None:
         """Delegates validation to the domain model."""
-        settings.validate()
+        if not settings:
+            raise ValueError('Compression settings are required.')
+        else:
+            settings.validate()
 
     def compress_file(
         self,

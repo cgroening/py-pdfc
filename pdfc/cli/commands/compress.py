@@ -24,6 +24,7 @@ class CompressCommand:
     _service: CompressionService
     _input: InputView
     _compress_request: CompressRequest
+    _pdf_files: list[Path]
 
     def __init__(
         self, service: CompressionService, input_view: InputView
@@ -33,64 +34,18 @@ class CompressCommand:
 
     def run(self, compress_parameters: CompressRequest) -> None:
         self._compress_request = compress_parameters
-
-        if self._compress_request.interactive_mode:
-            try:
-                self._compress_request.compression_settings = self._run_interactive_mode()
-            except Exception as e:
-                print_error(f'Failed to build settings: {e}')
-                sys.exit(1)
-
-        # --- Validate ---
-        try:
-            self._service.validate(self._compress_request.compression_settings)
-        except ValueError as e:
-            print_error(str(e))
-            sys.exit(1)
-
-        # --- Find PDF files ---
-        try:
-            pdf_files = self._service.get_pdf_files(self._compress_request.input_path)
-        except ValueError as e:
-            print_error(str(e))
-            sys.exit(1)
-
-        if not pdf_files:
-            print_error('No PDF files found.')
-            sys.exit(1)
-
-        # output_path only makes sense for a single file
-        if self._compress_request.input_path.is_dir() and self._compress_request.output_path is not None:
-            print_warning(
-                'Output path is ignored when the input is a directory.'
-            )
-            output_path = None
-
-        # --- Print settings ---
+        self._read_compression_settings_via_interactive_mode()
+        self._validate_compression_settings()
+        self._find_pdf_files_in_input_path()
+        self._validate_output_path()
         self._print_compression_settings(self._compress_request.compression_settings)
+        self._process_pdf_files()
 
-        # --- Compress each file ---
-        for pdf in pdf_files:
-            out = self._service.get_compress_output_path(
-                pdf,
-                self._compress_request.output_path if len(pdf_files) == 1 else None,
-            )
-            auto = self._compress_request.output_path is None or len(pdf_files) > 1
-            self._print_paths(pdf, out, target_auto=auto)
-            try:
-                self._service.compress_file(pdf, out, self._compress_request.compression_settings)
-                size_kb = out.stat().st_size / 1024
-                orig_kb = pdf.stat().st_size / 1024
-                savings = (1 - size_kb / orig_kb) * 100 if orig_kb else 0
-                msg = f'{out.name}  ({size_kb:.1f} KB, {savings:.1f}% savings)'
-                print_success(msg)
-            except Exception as e:
-                print_error(f'{pdf.name}: {e}')
-
-    # ------------------------------------------------------------------
-
-    def _run_interactive_mode(self) -> CompressionSettings:
+    def _read_compression_settings_via_interactive_mode(self) -> None:
         """Collects CompressionSettings interactively via prompts."""
+        if not self._compress_request.interactive_mode:
+            return
+
         print_info('Starting interactive mode…\n')
         prompts = 0
         try:
@@ -129,7 +84,7 @@ class CompressCommand:
         # Remove all prompt lines from the console before printing the final settings.
         # 2 lines for the header (info message + blank line), 1 per completed prompt
         clear_lines(2 + prompts)
-        return CompressionSettings(
+        self._compress_request.compression_settings = CompressionSettings(
             _mode=mode,
             _dpi=dpi,
             _jpeg_quality=jpeg_quality,
@@ -140,6 +95,41 @@ class CompressCommand:
             _unsharp_mask=unsharp_mask,
             _tiff_ccitt=tiff_ccitt,
         )
+
+    def _validate_compression_settings(self):
+        try:
+            self._service.validate(self._compress_request.compression_settings)
+        except ValueError as e:
+            print_error(str(e))
+            sys.exit(1)
+
+    def _find_pdf_files_in_input_path(self) -> None:
+        try:
+            pdf_files = self._service.get_pdf_files(self._compress_request.input_path)
+        except ValueError as e:
+            print_error(str(e))
+            sys.exit(1)
+
+        if not pdf_files:
+            print_error('No PDF files found.')
+            sys.exit(1)
+
+        self._pdf_files = pdf_files
+
+    def _validate_output_path(self):
+        """
+        Return a warning if an output path is provided for multiple input files
+        because in that case the output path will be ignored and auto-generated
+        for each file.
+        """
+        if self._compress_request.input_path.is_dir() \
+        and self._compress_request.output_path is not None:
+            print_warning(
+                'Output path is ignored when the input is a directory.'
+                'The output path will be auto-generated for each file in the '
+                'same directory as the input file.'
+            )
+            self._compress_request.output_path = None
 
     @staticmethod
     def _print_compression_settings(settings: CompressionSettings) -> None:
@@ -185,9 +175,44 @@ class CompressCommand:
         console.print()
         console.print(main_table)
 
+    def _process_pdf_files(self):
+        """
+        Loops through all PDF files, compressing them one by one and
+        printing results.
+        """
+        pdf_files = self._pdf_files
+        for pdf_file_path in pdf_files:
+            output_path = self._service.get_compress_output_path(
+                pdf_file_path,
+                self._compress_request.output_path
+            )
+            self._print_paths(
+                source=pdf_file_path,
+                target=output_path,
+                target_is_generated=\
+                    self._compress_request.input_path_is_directory()
+            )
+            try:
+                self._service.compress_file(
+                    pdf_file_path,
+                    output_path,
+                    self._compress_request.compression_settings
+                )
+                original_size_kb = pdf_file_path.stat().st_size / 1024
+                compressed_size_kb = output_path.stat().st_size / 1024
+
+                if original_size_kb:
+                    savings = (1 - compressed_size_kb / original_size_kb) * 100
+                else:
+                    savings = 0.0
+                msg = f'{output_path.name}  ({compressed_size_kb:.1f} KB, {savings:.1f}% savings)'
+                print_success(msg)
+            except Exception as e:
+                print_error(f'{pdf_file_path.name}: {e}')
+
     @staticmethod
     def _print_paths(
-        source: Path, target: Path, target_auto: bool = False
+        source: Path, target: Path, target_is_generated: bool = False
     ) -> None:
         """
         Prints source and target paths in a formatted table.
@@ -202,7 +227,7 @@ class CompressCommand:
         └─────────┴─────────────────────────────────────────────────┘
         """
         target_str = str(target)
-        if target_auto:
+        if target_is_generated:
             target_str += '\n[yellow](auto-generated)[/yellow]'
 
         table = Table(show_header=False, show_lines=True)
@@ -212,3 +237,4 @@ class CompressCommand:
         table.add_row('Source:', str(source))
         table.add_row('Target:', target_str)
         console.print(table)
+

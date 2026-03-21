@@ -7,5 +7,9 @@ from pdfc.domain.models import CompressionSettings
 class CompressRequest:
     interactive_mode: bool
     input_path: Path
+    compression_settings: CompressionSettings
     output_path: Path | None = None
-    compression_settings: CompressionSettings | None = None
+
+
+    def input_path_is_directory(self) -> bool:
+        return self.input_path.is_dir()
