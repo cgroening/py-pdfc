@@ -1,7 +1,3 @@
-"""
-Storage layer: PDF compression implementation.
-Converts PDF pages to images, applies enhancements and reassembles as PDF.
-"""
 import os
 import tempfile
 from pathlib import Path
@@ -13,16 +9,12 @@ from pdfc.domain.models import CompressionSettings, CompressionMode
 
 class PdfCompressor:
     """
-    Compresses a PDF file by rasterising each page, applying image
-    enhancements and re-encoding with the chosen format (JPEG, PNG or
-    TIFF CCITT Group 4).
+    Compresses a PDF file by rasterising each page, applying image enhancements
+    and re-encoding with the chosen format (JPEG, PNG or TIFF CCITT Group 4).
     """
 
     def compress(
-        self,
-        input_path: Path,
-        output_path: Path,
-        settings: CompressionSettings,
+        self, input_path: Path, output_path: Path, settings: CompressionSettings
     ) -> None:
         """
         Compresses a single PDF file.

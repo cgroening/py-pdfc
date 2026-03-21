@@ -1,6 +1,3 @@
-"""
-Storage layer: loads compare presets from ~/.config/pdfc/presets.yaml.
-"""
 from pathlib import Path
 import yaml
 
@@ -55,13 +52,16 @@ class PresetsStorage:
 
         if not isinstance(data, dict) or 'presets' not in data:
             raise ValueError(
-                f"Presets file must contain a top-level 'presets' list: {self._path}"
+                f'Presets file must contain a top-level "presets" list:\n'
+                f'{self._path}'
             )
 
         result: list[dict] = []
         for i, preset in enumerate(data['presets']):
             if 'name' not in preset:
-                raise ValueError(f"Preset at index {i} is missing a 'name' field.")
+                raise ValueError(
+                    f'Preset at index {i} is missing a "name" field.'
+                )
             entry: dict = {'name': preset['name']}
             for yaml_key, settings_key in _FIELD_MAP.items():
                 if yaml_key in preset:
