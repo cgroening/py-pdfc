@@ -2,6 +2,7 @@ import typer
 from pathlib import Path
 from typing import Optional
 
+from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
@@ -42,7 +43,7 @@ def compress(
             'Defaults to <input>-compressed.pdf.'
         ),
     ),
-    interactive: bool = typer.Option(
+    interactive_mode: bool = typer.Option(
         False, '-i', '--interactive',
         help='Collect compression settings interactively.',
     ),
@@ -99,12 +100,14 @@ def compress(
         _unsharp_mask=unsharp_mask,
         _tiff_ccitt=tiff_ccitt,
     )
-    _compress_cmd.run(
-        interactive_mode=interactive,
+    compress_request = CompressRequest(
+        interactive_mode=interactive_mode,
         input_path=input_path,
         output_path=output_path,
         compression_settings=compression_settings,
     )
+
+    _compress_cmd.run(compress_request)
 
 
 @app.command()

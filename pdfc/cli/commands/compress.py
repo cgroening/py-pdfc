@@ -1,13 +1,13 @@
 import sys
 from pathlib import Path
-from typing import Optional
 from rich.console import Console
 from rich.table import Table
-from pdfc.domain.models import CompressionSettings
+from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.output import (
     print_info, print_success, print_warning, print_error, clear_lines
 )
 from pdfc.cli.input import InputView
+from pdfc.domain.models import CompressionSettings
 from pdfc.services.compression_service import CompressionService
 
 
@@ -23,6 +23,7 @@ class CompressCommand:
     """
     _service: CompressionService
     _input: InputView
+    _compress_request: CompressRequest
 
     def __init__(
         self, service: CompressionService, input_view: InputView
@@ -30,29 +31,26 @@ class CompressCommand:
         self._service = service
         self._input = input_view
 
-    def run(
-        self, interactive_mode: bool,
-        input_path: Path, output_path: Optional[Path],
-        compression_settings: CompressionSettings
-    ) -> None:
-        # --- Build compression settings ---
-        if interactive_mode:
+    def run(self, compress_parameters: CompressRequest) -> None:
+        self._compress_request = compress_parameters
+
+        if self._compress_request.interactive_mode:
             try:
-                compression_settings = self._run_interactive_mode()
+                self._compress_request.compression_settings = self._run_interactive_mode()
             except Exception as e:
                 print_error(f'Failed to build settings: {e}')
                 sys.exit(1)
 
         # --- Validate ---
         try:
-            self._service.validate(compression_settings)
+            self._service.validate(self._compress_request.compression_settings)
         except ValueError as e:
             print_error(str(e))
             sys.exit(1)
 
         # --- Find PDF files ---
         try:
-            pdf_files = self._service.get_pdf_files(input_path)
+            pdf_files = self._service.get_pdf_files(self._compress_request.input_path)
         except ValueError as e:
             print_error(str(e))
             sys.exit(1)
@@ -62,25 +60,25 @@ class CompressCommand:
             sys.exit(1)
 
         # output_path only makes sense for a single file
-        if input_path.is_dir() and output_path is not None:
+        if self._compress_request.input_path.is_dir() and self._compress_request.output_path is not None:
             print_warning(
                 'Output path is ignored when the input is a directory.'
             )
             output_path = None
 
         # --- Print settings ---
-        self._print_compression_settings(compression_settings)
+        self._print_compression_settings(self._compress_request.compression_settings)
 
         # --- Compress each file ---
         for pdf in pdf_files:
             out = self._service.get_compress_output_path(
                 pdf,
-                output_path if len(pdf_files) == 1 else None,
+                self._compress_request.output_path if len(pdf_files) == 1 else None,
             )
-            auto = output_path is None or len(pdf_files) > 1
+            auto = self._compress_request.output_path is None or len(pdf_files) > 1
             self._print_paths(pdf, out, target_auto=auto)
             try:
-                self._service.compress_file(pdf, out, compression_settings)
+                self._service.compress_file(pdf, out, self._compress_request.compression_settings)
                 size_kb = out.stat().st_size / 1024
                 orig_kb = pdf.stat().st_size / 1024
                 savings = (1 - size_kb / orig_kb) * 100 if orig_kb else 0
@@ -147,6 +145,19 @@ class CompressCommand:
     def _print_compression_settings(settings: CompressionSettings) -> None:
         """
         Prints the compression settings split into two side-by-side tables.
+
+        Example
+        -------
+                       Compression Settings
+        ┏━━━━━━━━━━━━━━┳━━━━━━━┓ ┏━━━━━━━━━━━━━━┳━━━━━━━┓
+        ┃ Setting      ┃ Value ┃ ┃ Setting      ┃ Value ┃
+        ┡━━━━━━━━━━━━━━╇━━━━━━━┩ ┡━━━━━━━━━━━━━━╇━━━━━━━┩
+        │ Mode         │ B&W   │ │ BW Threshold │ 150   │
+        │ DPI          │ 300   │ │ Sharpen      │ 0.0   │
+        │ Format       │ JPEG  │ │ Contrast     │ 1.0   │
+        │ JPEG Quality │ 20    │ │ Unsharp Mask │ No    │
+        │ PNG Level    │ -     │ │ TIFF CCITT   │ No    │
+        └──────────────┴───────┘ └──────────────┴───────┘
         """
         main_table = Table(
             title='Compression Settings',
@@ -175,8 +186,21 @@ class CompressCommand:
         console.print(main_table)
 
     @staticmethod
-    def _print_paths(source: Path, target: Path, target_auto: bool = False) -> None:
-        """Prints source and target paths in a formatted table."""
+    def _print_paths(
+        source: Path, target: Path, target_auto: bool = False
+    ) -> None:
+        """
+        Prints source and target paths in a formatted table.
+
+        Example
+        -------
+        ┌─────────┬─────────────────────────────────────────────────┐
+        │ Source: │ /Users/cgroening/Downloads/input.pdf            │
+        ├─────────┼─────────────────────────────────────────────────┤
+        │ Target: │ /Users/cgroening/Downloads/input-compressed.pdf │
+        │         │ (auto-generated)                                │
+        └─────────┴─────────────────────────────────────────────────┘
+        """
         target_str = str(target)
         if target_auto:
             target_str += '\n[yellow](auto-generated)[/yellow]'
