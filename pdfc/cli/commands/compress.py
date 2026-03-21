@@ -6,7 +6,7 @@ from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.output import (
     print_info, print_success, print_warning, print_error, clear_lines
 )
-from pdfc.cli.input import InputView
+from pdfc.cli.commands.compress_input import InputView
 from pdfc.domain.models import CompressionSettings
 from pdfc.services.compression_service import CompressionService
 

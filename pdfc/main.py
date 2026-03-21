@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from pdfc.cli.compress_parameters import CompressRequest
-from pdfc.cli.input import InputView
+from pdfc.cli.commands.compress_input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
 from pdfc.domain.models import CompressionSettings
