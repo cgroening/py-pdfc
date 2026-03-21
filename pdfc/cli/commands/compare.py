@@ -82,7 +82,7 @@ class CompareCommand:
     def _print_number_of_found_pdf_files_and_configs(self) -> None:
         print_info(
             f'Found {self._total_files} PDF file(s) — '
-            f'running {self._total_configs} configurations each.\n'
+            f'running {self._total_configs} configurations each.'
         )
 
     def _process_pdf_files(self):
