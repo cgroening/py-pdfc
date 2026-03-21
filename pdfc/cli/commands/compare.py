@@ -100,12 +100,14 @@ class CompareCommand:
     def _run_configs_for_file(
         self, pdf_file_path: Path, input_size: int, out_dir: Path
     ) -> None:
-        for name, settings in self._configs:
-            out_path = out_dir / f'{name}.pdf'
+        for name, compression_settings in self._configs:
+            output_path = out_dir / f'{name}.pdf'
             try:
-                self._service.compress_file(pdf_file_path, out_path, settings)
+                self._service.compress_file(
+                    pdf_file_path, output_path, compression_settings
+                )
                 self._print_compare_config_ok(
-                    name, out_path.stat().st_size, input_size
+                    name, output_path.stat().st_size, input_size
                 )
                 self._successful += 1
             except Exception as e:

@@ -187,20 +187,23 @@ class CompressCommand:
             )
             self._compress_single_file(pdf, output_path)
 
-    def _compress_single_file(self, pdf: Path, output_path: Path) -> None:
+    def _compress_single_file(
+        self, pdf_file_path: Path, output_path: Path
+    ) -> None:
         """Compresses a single PDF file and prints the result."""
+        compress_request = self._compress_request
         self._print_paths(
-            source=pdf,
+            source=pdf_file_path,
             target=output_path,
-            target_is_generated=self._compress_request.input_path_is_directory()
+            target_is_generated=compress_request.input_path_is_directory()
         )
         try:
             self._service.compress_file(
-                pdf, output_path, self._compress_request.compression_settings
+                pdf_file_path, output_path, compress_request.compression_settings
             )
-            self._print_compression_result(pdf, output_path)
+            self._print_compression_result(pdf_file_path, output_path)
         except Exception as e:
-            print_error(f'{pdf.name}: {e}')
+            print_error(f'{pdf_file_path.name}: {e}')
 
     @staticmethod
     def _print_compression_result(

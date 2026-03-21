@@ -7,22 +7,13 @@ from pdfc.storage.presets_storage import PresetsStorage
 class CompressionService:
     """
     Orchestrates compression and comparison workflows.
-
-    Knows the storage layer only via injected storage objects; does not
-    depend on the CLI layer or domain validation details.
     """
 
     def __init__(
-        self,
-        compressor: PdfCompressor,
-        presets_storage: PresetsStorage,
+        self, compressor: PdfCompressor, presets_storage: PresetsStorage,
     ) -> None:
         self._compressor = compressor
         self._presets = presets_storage
-
-    # ------------------------------------------------------------------
-    # Compression
-    # ------------------------------------------------------------------
 
     def validate(self, settings: CompressionSettings | None) -> None:
         """Delegates validation to the domain model."""
@@ -32,24 +23,16 @@ class CompressionService:
             settings.validate()
 
     def compress_file(
-        self,
-        input_path: Path,
-        output_path: Path,
-        settings: CompressionSettings,
+        self, input_path: Path, output_path: Path,
+        compression_settings: CompressionSettings,
     ) -> None:
         """Compresses a single PDF file."""
-        self._compressor.compress(input_path, output_path, settings)
-
-    # ------------------------------------------------------------------
-    # Path helpers
-    # ------------------------------------------------------------------
+        self._compressor.compress(input_path, output_path, compression_settings)
 
     def get_pdf_files(self, path: Path) -> list[Path]:
         """
-        Returns all PDF files at *path*.
-
-        If *path* is a file, returns ``[path]``.
-        If *path* is a directory, returns all PDFs found recursively.
+        Returns a list of all PDF files at `path`. If `path` is a file, the list
+        will contain just that file.
 
         Raises
         ------
@@ -71,28 +54,26 @@ class CompressionService:
             return unique
         raise ValueError(f'Path does not exist: {path}')
 
-    def get_compress_output_path(
-        self,
-        pdf_path: Path,
-        explicit_output: Path | None,
+    def get_output_path(
+        self, input_path: Path, output_path: Path | None,
     ) -> Path:
-        """Returns the output path, auto-generating it when not provided."""
-        if explicit_output is not None:
-            return explicit_output
-        return pdf_path.parent / f'{pdf_path.stem}-compressed.pdf'
+        """
+        Returns `output_path` as is if not `None`, otherwise returns a path in
+        the same directory as `input_path` with '-compressed' appended to the
+        input file name.
+        """
+        if isinstance(output_path, Path):
+            return output_path
+        return input_path.parent / f'{input_path.stem}-compressed.pdf'
 
-    def get_compare_output_dir(self, pdf_path: Path) -> Path:
-        """Returns the comparison output directory for *pdf_path*."""
-        return pdf_path.parent / pdf_path.stem
-
-    # ------------------------------------------------------------------
-    # Compare
-    # ------------------------------------------------------------------
+    def get_compare_output_dir(self, pdf_input_path: Path) -> Path:
+        """Returns the comparison output directory for `pdf_path`."""
+        return pdf_input_path.parent / pdf_input_path.stem
 
     def get_compare_configs(self, dpi: int) -> list[tuple[str, CompressionSettings]]:
         """
         Loads presets from storage and returns them as (name, settings) pairs
-        with the given DPI applied to each.
+        with the given DPI applied to each (if DPI is not defined in config).
 
         Raises
         ------
@@ -109,3 +90,4 @@ class CompressionService:
                 params['_dpi'] = dpi
             result.append((cfg['name'], CompressionSettings(**params)))
         return result
+
