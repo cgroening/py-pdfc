@@ -1,5 +1,6 @@
 from pathlib import Path
 from pdfc.domain.models import CompressionSettings
+from pdfc.domain.errors import CompressionError
 from pdfc.storage.pdf_compressor import PdfCompressor
 from pdfc.storage.presets_storage import PresetsStorage
 
@@ -27,7 +28,14 @@ class CompressionService:
         compression_settings: CompressionSettings,
     ) -> None:
         """Compresses a single PDF file."""
-        self._compressor.compress(input_path, output_path, compression_settings)
+        try:
+            self._compressor.compress(
+                input_path, output_path, compression_settings
+            )
+        except Exception as e:
+            raise CompressionError(
+                input_path, output_path, compression_settings, str(e)
+            )
 
     def get_pdf_files(self, path: Path) -> list[Path]:
         """
