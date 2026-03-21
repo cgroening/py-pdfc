@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from unittest.mock import MagicMock
 from pdfc.domain.errors import CompressionError
 from pdfc.domain.models import CompressionSettings
