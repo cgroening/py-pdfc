@@ -5,6 +5,7 @@ from typing import Optional
 from pdfc.cli.input import InputView
 from pdfc.cli.commands.compress import CompressCommand
 from pdfc.cli.commands.compare import CompareCommand
+from pdfc.domain.models import CompressionSettings
 from pdfc.services.compression_service import CompressionService
 from pdfc.storage.pdf_compressor import PdfCompressor
 from pdfc.storage.presets_storage import PresetsStorage
@@ -82,19 +83,27 @@ def compress(
         help='Use TIFF CCITT Group 4 as intermediate format (bw mode only).',
     ),
 ):
+    if jpeg_quality is not None and png_compression_level is not None:
+        raise typer.BadParameter(
+            'Cannot use --jpeg-quality and --png-compression-level at the same time.'
+        )
+
+    compression_settings = CompressionSettings(
+        _mode=mode,
+        _dpi=dpi,
+        _jpeg_quality=jpeg_quality,
+        _png_compression=png_compression_level,
+        _bw_threshold=threshold,
+        _sharpen=sharpen,
+        _contrast=contrast,
+        _unsharp_mask=unsharp_mask,
+        _tiff_ccitt=tiff_ccitt,
+    )
     _compress_cmd.run(
-        interactive=interactive,
+        interactive_mode=interactive,
         input_path=input_path,
         output_path=output_path,
-        mode=mode,
-        dpi=dpi,
-        jpeg_quality=jpeg_quality,
-        png_compression_level=png_compression_level,
-        threshold=threshold,
-        sharpen=sharpen,
-        contrast=contrast,
-        unsharp_mask=unsharp_mask,
-        tiff_ccitt=tiff_ccitt,
+        compression_settings=compression_settings,
     )
 
 

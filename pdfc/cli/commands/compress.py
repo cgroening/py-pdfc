@@ -25,59 +25,27 @@ class CompressCommand:
     _input: InputView
 
     def __init__(
-        self,
-        service: CompressionService,
-        input_view: InputView,
+        self, service: CompressionService, input_view: InputView
     ) -> None:
         self._service = service
         self._input = input_view
 
     def run(
-        self,
-        interactive: bool,
-        input_path: Path,
-        output_path: Optional[Path],
-        mode: Optional[str],
-        dpi: Optional[int],
-        jpeg_quality: Optional[int],
-        png_compression_level: Optional[int],
-        threshold: Optional[int],
-        sharpen: Optional[float],
-        contrast: Optional[float],
-        unsharp_mask: bool,
-        tiff_ccitt: bool
+        self, interactive_mode: bool,
+        input_path: Path, output_path: Optional[Path],
+        compression_settings: CompressionSettings
     ) -> None:
-        # --- Guard: both JPEG quality and PNG level given ---
-        if jpeg_quality is not None and png_compression_level is not None:
-            print_error(
-                'Cannot use --jpeg-quality and --png-compression-level at the '
-                'same time. Specify only one.'
-            )
-            sys.exit(1)
-
         # --- Build compression settings ---
-        try:
-            if interactive:
-                settings = self._run_interactive_mode()
-            else:
-                settings = CompressionSettings(
-                    _mode=mode,
-                    _dpi=dpi,
-                    _jpeg_quality=jpeg_quality,
-                    _png_compression=png_compression_level,
-                    _bw_threshold=threshold,
-                    _sharpen=sharpen,
-                    _contrast=contrast,
-                    _unsharp_mask=unsharp_mask,
-                    _tiff_ccitt=tiff_ccitt,
-                )
-        except Exception as e:
-            print_error(f'Failed to build settings: {e}')
-            sys.exit(1)
+        if interactive_mode:
+            try:
+                compression_settings = self._run_interactive_mode()
+            except Exception as e:
+                print_error(f'Failed to build settings: {e}')
+                sys.exit(1)
 
         # --- Validate ---
         try:
-            self._service.validate(settings)
+            self._service.validate(compression_settings)
         except ValueError as e:
             print_error(str(e))
             sys.exit(1)
@@ -101,7 +69,7 @@ class CompressCommand:
             output_path = None
 
         # --- Print settings ---
-        self._print_compression_settings(settings)
+        self._print_compression_settings(compression_settings)
 
         # --- Compress each file ---
         for pdf in pdf_files:
@@ -112,7 +80,7 @@ class CompressCommand:
             auto = output_path is None or len(pdf_files) > 1
             self._print_paths(pdf, out, target_auto=auto)
             try:
-                self._service.compress_file(pdf, out, settings)
+                self._service.compress_file(pdf, out, compression_settings)
                 size_kb = out.stat().st_size / 1024
                 orig_kb = pdf.stat().st_size / 1024
                 savings = (1 - size_kb / orig_kb) * 100 if orig_kb else 0
