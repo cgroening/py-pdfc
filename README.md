@@ -1,7 +1,6 @@
 # `pdfc` – PDF Compressor for the Command Line
 
-A command-line tool for compressing and optimising PDF files using configurable
-rasterisation, colour mode, sharpening, and contrast settings.
+A command-line tool for compressing and optimising PDF files using configurable rasterization, colour mode, sharpening and contrast settings.
 
 ## Requirements
 
@@ -32,12 +31,10 @@ pdfc compress [OPTIONS] INPUT_PATH [OUTPUT_PATH]
 
 | Argument / Option | Short | Description |
 |---|---|---|
-| `INPUT_PATH` | | PDF file or directory of PDF files to compress |
-| `OUTPUT_PATH` | | Output file (single-file mode only). Defaults to `<input>-compressed.pdf` |
 | `--interactive` | `-i` | Collect all settings interactively via prompts |
 | `--verbose` | `-v` | Verbose output |
-| `--mode` | `-m` | Colour mode: `color`, `gray`, or `bw` |
-| `--dpi` | `-d` | Resolution for rasterisation in dots per inch (default: 300) |
+| `--mode` | `-m` | Colour mode: `color`, `gray` or `bw` |
+| `--dpi` | `-d` | Resolution for rasterization in dots per inch (default: 300) |
 | `--jpeg-quality` | `-q` | JPEG quality 1–100 (default: 30). Mutually exclusive with `--png-compression-level` |
 | `--png-compression-level` | `-p` | PNG compression level 0–9 (default: 6). Mutually exclusive with `--jpeg-quality` |
 | `--threshold` | `-t` | B&W threshold 0–255 (default: 150). Only used in `bw` mode |
@@ -45,6 +42,8 @@ pdfc compress [OPTIONS] INPUT_PATH [OUTPUT_PATH]
 | `--contrast` | `-c` | Contrast factor 0.0–3.0 (default: 1.0 = no change) |
 | `--unsharp-mask` | `-u` | Apply PIL UnsharpMask filter |
 | `--tiff-ccitt` | `-T` | Use TIFF CCITT Group 4 as intermediate format (`bw` mode only) |
+| `INPUT_PATH` | | PDF file or directory of PDF files to compress |
+| `OUTPUT_PATH` | | Output file (single-file mode only). Defaults to `<input>-compressed.pdf` |
 
 **Examples:**
 
@@ -73,7 +72,7 @@ pdfc compare [OPTIONS] INPUT_PATH
 
 | Option | Short | Description |
 |---|---|---|
-| `--dpi` | `-d` | Resolution for rasterisation (default: 300) |
+| `--dpi` | `-d` | Resolution for rasterization (default: 300) |
 | `--verbose` | `-v` | Verbose output |
 
 **Examples:**
@@ -128,8 +127,8 @@ Available preset fields:
 | Field | Type | Description |
 |---|---|---|
 | `name` | string | Required. Used as the output file name |
-| `mode` | string | `color`, `gray`, or `bw` |
-| `dpi` | int | Resolution for rasterisation |
+| `mode` | string | `color`, `gray` or `bw` |
+| `dpi` | int | Resolution for rasterization |
 | `threshold` | int | B&W threshold 0–255 |
 | `jpeg_quality` | int | JPEG quality 1–100 |
 | `png_compression` | int | PNG compression level 0–9 |
