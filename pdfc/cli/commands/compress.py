@@ -222,7 +222,8 @@ class CompressCommand:
 
         print_success(
             f'{compressed_file_path.name}  '
-            f'({compressed_size_kb:.1f} KB, {savings:.1f}% savings)'
+                f'({original_size_kb:.0f} KB → {compressed_size_kb:.0f} KB, '
+            f'{savings:.0f} %)'
         )
 
     @staticmethod
