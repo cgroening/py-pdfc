@@ -3,7 +3,7 @@ from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
-from pdfc.cli.output import print_error, print_info
+from pdfc.cli.output import print_error, print_info, get_arrow_depending_on_sign
 from pdfc.domain.models import CompressionSettings
 from pdfc.services.compression import CompressionService
 
@@ -140,7 +140,7 @@ class CompareCommand:
         console.print(
             f'  [green]✓[/green] [cyan]{name:<45}[/cyan] '
             f'[green]{output_size_kb:>8.0f} KB[/green]  '
-            f'[dim]({savings:.0f} %)[/dim]'
+            f'({get_arrow_depending_on_sign(savings)}{abs(savings):.0f} %)'
         )
 
     @staticmethod

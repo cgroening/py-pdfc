@@ -4,7 +4,8 @@ from rich.console import Console
 from rich.table import Table
 from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.output import (
-    print_info, print_success, print_warning, print_error, clear_lines
+    print_info, print_success, print_warning, print_error, clear_lines,
+    get_arrow_depending_on_sign
 )
 from pdfc.cli.commands.compress_input import InputView
 from pdfc.domain.models import CompressionSettings
@@ -223,7 +224,7 @@ class CompressCommand:
         print_success(
             f'{compressed_file_path.name}  '
                 f'({original_size_kb:.0f} KB → {compressed_size_kb:.0f} KB, '
-            f'{savings:.0f} %)'
+            f'{get_arrow_depending_on_sign(savings)}{abs(savings):.0f} %)'
         )
 
     @staticmethod

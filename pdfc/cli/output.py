@@ -49,3 +49,22 @@ def clear_lines(count: int) -> None:
     sys.stdout.write(f'\033[{count}A\033[0J')
     sys.stdout.flush()
 
+
+def get_arrow_depending_on_sign(
+    value: int | float, round_decimals: int = 0
+) -> str:
+    """Returns an arrow symbol based on the sign of the value. The value is
+    rounded to the specified number of decimals before determining the sign.
+
+     - '↑' for negative values
+     - '↓' for positive values
+     - ' ' for zero
+    """
+    value = round(value, round_decimals)
+    if value < 0:
+        return '[red]↑[/red]'
+    elif value > 0:
+        return '[green]↓[/green]'
+    else:
+        return ' '
+
