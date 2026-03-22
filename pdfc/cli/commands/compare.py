@@ -90,7 +90,9 @@ class CompareCommand:
             out_dir = self._service.get_compare_output_dir(pdf_file_path)
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            self._print_compare_header(pdf_file_path, self._total_configs)
+            self._print_compare_header(
+                pdf_file_path, pdf_file_path.stat().st_size, self._total_configs
+            )
             input_size = pdf_file_path.stat().st_size
 
             self._run_configs_for_file(pdf_file_path, input_size, out_dir)
@@ -107,7 +109,7 @@ class CompareCommand:
                     pdf_file_path, output_path, compression_settings
                 )
                 self._print_compare_config_ok(
-                    name, output_path.stat().st_size, input_size
+                    name, input_size, output_path.stat().st_size
                 )
                 self._successful += 1
             except Exception as e:
@@ -115,24 +117,30 @@ class CompareCommand:
                 self._failed += 1
 
     @staticmethod
-    def _print_compare_header(pdf_path: Path, total_configs: int) -> None:
+    def _print_compare_header(
+        pdf_path: Path, pdf_file_size: int, total_configs: int
+    ) -> None:
         """Prints the header for a single PDF being compared."""
-        console.rule(f'[bold cyan]{pdf_path.name}[/bold cyan]')
+        pdf_file_size_kb = pdf_file_size / 1024
+        console.rule(
+            f'[cyan bold]{pdf_path.name}[/cyan bold] '
+            f'[cyan]([/cyan][green]{pdf_file_size_kb:.0f} KB[/green][cyan])[/cyan]'
+        )
         console.print(
             f'[dim]Running {total_configs} configurations …[/dim]\n'
         )
 
     @staticmethod
     def _print_compare_config_ok(
-        name: str, output_size: int, input_size: int
+        name: str, input_size: int, output_size: int
     ) -> None:
         """Prints a success line for one compare configuration."""
-        kb = output_size / 1024
+        output_size_kb = output_size / 1024
         savings = (1 - output_size / input_size) * 100 if input_size else 0
         console.print(
             f'  [green]✓[/green] [cyan]{name:<45}[/cyan] '
-            f'[green]{kb:>8.1f} KB[/green]  '
-            f'[dim]({savings:.1f}% savings)[/dim]'
+            f'[green]{output_size_kb:>8.0f} KB[/green]  '
+            f'[dim]({savings:.0f} %)[/dim]'
         )
 
     @staticmethod
