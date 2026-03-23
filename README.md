@@ -11,13 +11,13 @@ A command-line tool for compressing and optimising PDF files using configurable 
 
 ## Installation
 
-```bash
+```zsh
 pip install .
 ```
 
 For development (includes pytest, coverage):
 
-```bash
+```zsh
 pip install ".[dev]"
 ```
 
@@ -47,7 +47,7 @@ pdfc compress [OPTIONS] INPUT_PATH [OUTPUT_PATH]
 
 **Examples:**
 
-```bash
+```zsh
 # Compress a single file to B&W at 300 DPI
 pdfc compress input.pdf -m bw -d 300
 
@@ -66,6 +66,23 @@ pdfc compress input.pdf -i
 Runs all presets defined in `~/.config/pdfc/presets.yaml` against one or more
 PDF files and writes the results into a subdirectory named after each input file.
 
+
+Fields:
+
+| Field name        | Type     | Range                   | Default    | Description                                                                                                           |
+| ----------------- | -------- | ----------------------- | --- | --------------------------------------------------------------------------------------------------------------------- |
+| `name`            | `string` | `[a-zA-Z0-9_-]+`        | `-` | Required. Used as the output file name.                                                                               |
+| `mode`            | `string` | `color`, `gray` or `bw` | `bw`   | Color space of the output: Black & white (1-bit after threshold conversion), Grayscale (8-bit) or Color (RGB, 24-bit) |
+| `dpi`             | `int`    | `> 0`                   | `300`    | Resolution for rasterization. Strongly affects both quality and file size.                                                                                          |
+| `threshold`       | `int`    | `0-255`                 | `150`    | Threshold for B&W conversion. Pixels above the value → white, below → black. Higher value = more white = smaller file.                                                                                                  |
+| `jpeg_quality`    | `int`    | `1-100`                 | `30`    | JPEG quality. Lower values = smaller file, lower image quality. Enables JPEG mode. Cannot be combined with `png_compression`.                                                                  |
+| `png_compression` | `int`    | `0-9`                   | `7`    | PNG compression level. PNG compression level. Higher values lead to smaller files and longer processing times. Enables PNG mode. Cannot be combined with `jpeg_quality`.                                                                                    |
+| `sharpen`         | `float`  | `0.0-3.0`               | `1.0`   | Sharpening filter (PIL ImageEnhance.Sharpness). 0.0 → off, 1.0 → no change, >1.0 → sharper. |
+| `contrast`        | `float`  | `0.0-3.0`               | `1.0`   | Contrast filter (PIL ImageEnhance.Contrast). 1.0 → no change, >1.0 → more contrast.      |
+| `unsharp_mask`    | `bool`   | `true`/`false`          | `false`    | PIL UnsharpMask filter (radius=2, percent=150, threshold=3). Sharpens edges before conversion. |
+| `tiff_ccitt`      | `bool`   | `true`/`false`          | `false`    | Use TIFF CCITT Group 4 intermediate format                                                                            |
+
+
 ```
 pdfc compare [OPTIONS] INPUT_PATH
 ```
@@ -77,7 +94,7 @@ pdfc compare [OPTIONS] INPUT_PATH
 
 **Examples:**
 
-```bash
+```zsh
 # Compare all presets for a single file
 pdfc compare input.pdf
 
@@ -100,6 +117,8 @@ input/
 The `compare` command reads presets from `~/.config/pdfc/presets.yaml`.
 Each preset defines a named compression configuration.
 
+**Example:**
+
 ```yaml
 presets:
   - name: bw-300
@@ -121,6 +140,8 @@ presets:
     sharpen: 1.3
     contrast: 1.3
 ```
+
+See `example-presets.yaml` for more presets to try.
 
 Available preset fields:
 

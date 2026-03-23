@@ -1,0 +1,255 @@
+# =============================================================================
+#
+# pdfc – Compare Presets
+#
+# =============================================================================
+#
+# Each preset generates one output PDF in a folder with the name of the input
+# file next to the input file when running `pdfc compare`.
+# The output filename is taken from the `name` field.
+#
+# See README.md for a description of the available options and their effects
+# on output quality and file size.
+
+presets:
+  # ---------------------------------------------------------------------------
+  # B&W · PNG (lossless, 1-bit)
+  # ---------------------------------------------------------------------------
+
+  - name: bw-png-thresh150
+    mode: bw
+    threshold: 150
+    png_compression: 6
+
+  - name: bw-png-thresh180
+    mode: bw
+    threshold: 180
+    png_compression: 6
+
+  - name: bw-png-thresh180-sharp
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+
+  - name: bw-png-thresh180-contrast
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    contrast: 1.5
+
+  - name: bw-png-thresh180-unsharp
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    unsharp_mask: true
+
+  - name: bw-png-thresh180-sharp-contrast
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+
+  - name: bw-png-thresh180-sharp-unsharp
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+    unsharp_mask: true
+
+  - name: bw-png-thresh180-sharp-contrast-unsharp
+    mode: bw
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: bw-png-thresh150-sharp-contrast-unsharp
+    mode: bw
+    threshold: 150
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: bw-png-thresh150-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 150
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  # DPI variants of the best B&W PNG configuration
+  - name: bw-png-thresh180-all-dpi200
+    mode: bw
+    dpi: 200
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: bw-png-thresh180-all-dpi150
+    mode: bw
+    dpi: 150
+    threshold: 180
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  # ---------------------------------------------------------------------------
+  # B&W · JPEG (lossy)
+  # ---------------------------------------------------------------------------
+
+  - name: bw-jpeg30-thresh150-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 150
+    jpeg_quality: 30
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  - name: bw-jpeg20-thresh180-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 180
+    jpeg_quality: 20
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  # ---------------------------------------------------------------------------
+  # B&W · TIFF CCITT Group 4 (smallest files for pure B&W)
+  # ---------------------------------------------------------------------------
+
+  - name: bw-tiff-thresh150-minimal
+    mode: bw
+    threshold: 150
+    tiff_ccitt: true
+
+  - name: bw-tiff-thresh150-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 150
+    tiff_ccitt: true
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  - name: bw-tiff-thresh180-minimal
+    mode: bw
+    threshold: 180
+    tiff_ccitt: true
+
+  - name: bw-tiff-thresh180-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 180
+    tiff_ccitt: true
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  - name: bw-tiff-thresh190-sharp-contrast2-unsharp
+    mode: bw
+    threshold: 190
+    tiff_ccitt: true
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  # DPI variants of the best TIFF configuration
+  - name: bw-tiff-thresh180-all-dpi200
+    mode: bw
+    dpi: 200
+    threshold: 180
+    tiff_ccitt: true
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  - name: bw-tiff-thresh180-all-dpi150
+    mode: bw
+    dpi: 150
+    threshold: 180
+    tiff_ccitt: true
+    sharpen: 1.5
+    contrast: 2.0
+    unsharp_mask: true
+
+  # ---------------------------------------------------------------------------
+  # Grayscale
+  # ---------------------------------------------------------------------------
+
+  - name: gray-baseline
+    mode: gray
+    jpeg_quality: 30
+
+  - name: gray-jpeg20-sharp-contrast-unsharp
+    mode: gray
+    jpeg_quality: 20
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: gray-jpeg35-sharp-contrast-unsharp
+    mode: gray
+    jpeg_quality: 35
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: gray-jpeg50-sharp-contrast-unsharp
+    mode: gray
+    jpeg_quality: 50
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: gray-png-sharp-contrast-unsharp
+    mode: gray
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  # ---------------------------------------------------------------------------
+  # Color
+  # ---------------------------------------------------------------------------
+
+  - name: color-baseline
+    mode: color
+    jpeg_quality: 30
+
+  - name: color-jpeg20-sharp-contrast-unsharp
+    mode: color
+    jpeg_quality: 20
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: color-jpeg35-sharp-contrast-unsharp
+    mode: color
+    jpeg_quality: 35
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: color-jpeg50-sharp-contrast-unsharp
+    mode: color
+    jpeg_quality: 50
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
+
+  - name: color-jpeg70
+    mode: color
+    jpeg_quality: 70
+
+  - name: color-png-sharp-contrast-unsharp
+    mode: color
+    png_compression: 6
+    sharpen: 1.5
+    contrast: 1.5
+    unsharp_mask: true
