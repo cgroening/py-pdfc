@@ -4,7 +4,7 @@ A command-line tool for compressing and optimising PDF files using configurable 
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-[![PyPI](https://img.shields.io/pypi/v/pdfc)](https://pypi.org/project/pdfc/)
+[![PyPI](https://img.shields.io/pypi/v/pypdfc)](https://pypi.org/project/pypdfc/)
 
 <img src="https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/logo_dark.png" width="200" alt="PDF Compressor Logo">
 
@@ -29,15 +29,29 @@ A command-line tool for compressing and optimising PDF files using configurable 
 
 ## Installation
 
-```zsh
-pip install .
-```
-
-For development (includes pytest, coverage):
+### Via pip
 
 ```zsh
-pip install ".[dev]"
+pip install pypdfc
 ```
+
+[pypdfc on PyPI](https://pypi.org/project/pypdfc/)
+
+### From Source
+
+1. Clone this repository:
+   ```zsh
+   git clone https://github.com/cgroening/py-pdfc.git
+   cd py-pdfc
+   ```
+
+2. Install the package if you want the `pdfc` command available globally:
+
+```zsh
+uv pip install .
+```
+
+Alternatively, `pdfc` can be run without installation, see Section [Without Installation](#usage-without-installation).
 
 ## Commands
 
@@ -132,6 +146,14 @@ input/
   preset-name-1.pdf
   preset-name-2.pdf
   ...
+```
+
+### Usage without Installation
+
+The package can also be run without installation from the project root:
+
+```zsh
+python -m pdfc
 ```
 
 ## Presets file
