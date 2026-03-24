@@ -6,6 +6,8 @@ A command-line tool for compressing and optimising PDF files using configurable 
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 [![PyPI](https://img.shields.io/pypi/v/pdfc)](https://pypi.org/project/pdfc/)
 
+<img src="https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/logo_dark.png" width="200" alt="PDF Compressor Logo">
+
 **Compressing a PDF file:**
 
 ![Screenshot](https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/screenshot_1_compress.png)
