@@ -2,6 +2,22 @@
 
 A command-line tool for compressing and optimising PDF files using configurable rasterization, colour mode, sharpening and contrast settings.
 
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![PyPI](https://img.shields.io/pypi/v/pdfc)](https://pypi.org/project/pdfc/)
+
+**Compressing a PDF file:**
+
+![Screenshot](https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/screenshot_1_compress.png)
+
+**Interactive mode:**
+
+![Screenshot](https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/screenshot_2_compress_interactive.png)
+
+**Comparing compression presets:**
+
+![Screenshot](https://raw.githubusercontent.com/cgroening/py-pdfc/main/images/screenshot_3_compare.png)
+
 ## Requirements
 
 - Python 3.11+
