@@ -83,6 +83,13 @@ def compress(
         False, '-T', '--tiff-ccitt',
         help='Use TIFF CCITT Group 4 as intermediate format (bw mode only).',
     ),
+    no_skip: bool = typer.Option(
+        False, '--no-skip',
+        help=(
+            'Process all files in the directory, including files ending with '
+            '"-compressed.pdf" (which are skipped by default).'
+        ),
+    ),
 ):
     if jpeg_quality is not None and png_compression_level is not None:
         raise typer.BadParameter(
@@ -105,6 +112,7 @@ def compress(
         input_path=input_path,
         output_path=output_path,
         compression_settings=compression_settings,
+        no_skip=no_skip,
     )
 
     _compress_cmd.run(compress_request)

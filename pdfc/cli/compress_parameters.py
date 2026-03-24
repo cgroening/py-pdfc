@@ -9,6 +9,7 @@ class CompressRequest:
     input_path: Path
     compression_settings: CompressionSettings
     output_path: Path | None = None
+    no_skip: bool = False
 
 
     def input_path_is_directory(self) -> bool:

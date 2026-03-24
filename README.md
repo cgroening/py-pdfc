@@ -42,6 +42,7 @@ pdfc compress [OPTIONS] INPUT_PATH [OUTPUT_PATH]
 | `--contrast` | `-c` | Contrast factor 0.0–3.0 (default: 1.0 = no change) |
 | `--unsharp-mask` | `-u` | Apply PIL UnsharpMask filter |
 | `--tiff-ccitt` | `-T` | Use TIFF CCITT Group 4 as intermediate format (`bw` mode only) |
+| `--no-skip` | | Process all files, including files ending with `-compressed.pdf` (which are skipped by default when input is a directory) |
 | `INPUT_PATH` | | PDF file or directory of PDF files to compress |
 | `OUTPUT_PATH` | | Output file (single-file mode only). Defaults to `<input>-compressed.pdf` |
 
@@ -54,8 +55,11 @@ pdfc compress input.pdf -m bw -d 300
 # Compress with a custom output path
 pdfc compress input.pdf output.pdf -m gray -d 200 -q 50
 
-# Compress all PDFs in a folder using defaults
+# Compress all PDFs in a folder using defaults (skips *-compressed.pdf files)
 pdfc compress /path/to/folder
+
+# Compress all PDFs in a folder, including already compressed files
+pdfc compress /path/to/folder --no-skip
 
 # Choose settings interactively
 pdfc compress input.pdf -i
@@ -265,7 +269,7 @@ threshold to control where the black/white boundary falls.
 
 ### v0.1 – Initial release
 
-- [ ] Skip files with the suffix `-compressed.pdf` to avoid re-processing already compressed files, unless flag `--no-skip` is set
+- [x] Skip files with the suffix `-compressed.pdf` to avoid re-processing already compressed files, unless flag `--no-skip` is set
 - [ ] Skip presets for color mode if input file is B&W or grayscale
 - [ ] Improve/clean output messages when processing files and presets
 

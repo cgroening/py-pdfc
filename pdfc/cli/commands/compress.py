@@ -108,6 +108,10 @@ class CompressCommand:
             sys.exit(1)
 
     def _find_pdf_files_in_input_path(self) -> None:
+        """
+        Finds all PDF files in the input path and filters out already compressed
+        files if the input is a directory and the no-skip flag is not set.
+        """
         try:
             pdf_files = self._service.get_pdf_files(
                 self._compress_request.input_path
@@ -116,11 +120,30 @@ class CompressCommand:
             print_error(str(e))
             sys.exit(1)
 
+        pdf_files = self._filter_already_compressed_files(pdf_files)
+
         if not pdf_files:
             print_error('No PDF files found.')
             sys.exit(1)
 
         self._pdf_files = pdf_files
+
+    def _filter_already_compressed_files(self, pdf_files) -> list[Path]:
+        """
+        If the input path is a directory and the no-skip flag is not set, filter
+        out files that have already been compressed (i.e. files whose name ends
+        with `-compressed.pdf`) and print a warning for each skipped file.
+        """
+        if self._compress_request.input_path.is_dir() \
+        and not self._compress_request.no_skip:
+            filtered = []
+            for f in pdf_files:
+                if f.stem.endswith('-compressed'):
+                    print_warning(f'Skipping already compressed file: {f.name}')
+                else:
+                    filtered.append(f)
+            pdf_files = filtered
+        return pdf_files
 
     def _validate_output_path(self):
         """
