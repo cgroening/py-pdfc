@@ -94,7 +94,7 @@ class TestGetCompareOutputDir:
         result = make_service().get_compare_output_dir(
             tmp_path / 'document.pdf'
         )
-        assert result == tmp_path / 'document'
+        assert result == tmp_path / 'document-compressed'
 
 
 class TestCompressFile:
@@ -157,7 +157,9 @@ class TestGetPresets:
 
     def test_does_not_override_preset_dpi(self):
         presets = MagicMock(spec=PresetsStorage)
-        presets.load.return_value = [{'name': 'p', '_mode': 'color', '_dpi': 600}]
+        presets.load.return_value = [
+            {'name': 'p', '_mode': 'color', '_dpi': 600}
+        ]
         _, settings = make_service(presets=presets).get_presets(dpi=72)[0]
         assert settings.dpi == 600
 

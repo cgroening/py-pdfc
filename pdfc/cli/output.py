@@ -53,6 +53,13 @@ def clear_lines(count: int) -> None:
     sys.stdout.flush()
 
 
+def print_skipped_files(title: str, files: list[str]) -> None:
+    """Prints a yellow panel with a title and an indented list of filenames."""
+    items = '\n'.join(f'  - {f}' for f in files)
+    message = f'[yellow bold]⚠ {title}[/yellow bold]\n{items}'
+    print_custom_panel(message, 'yellow')
+
+
 def get_arrow_depending_on_sign(
     value: int | float, round_decimals: int = 0
 ) -> str:

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from rich.console import Console
 from pdfc.cli.output import (
-    print_error, print_info,
+    print_error, print_info, print_skipped_files,
     print_file_section_header, print_result_ok, print_result_error,
     print_summary, print_presets_table
 )
@@ -65,12 +65,41 @@ class CompareCommand:
             print_error(str(e))
             sys.exit(1)
 
+        if input_path.is_dir():
+            pdf_files = self._filter_already_compressed_files(pdf_files)
+
         if not pdf_files:
             print_error('No PDF files found.')
             sys.exit(1)
 
         self._pdf_files = pdf_files
         self._total_files = len(pdf_files)
+
+    def _filter_already_compressed_files(
+        self, pdf_files: list[Path]
+    ) -> list[Path]:
+        filtered = []
+        skipped_files = []
+        skipped_dir_files = []
+        for f in pdf_files:
+            if f.stem.endswith('-compressed'):
+                skipped_files.append(f.name)
+            elif any(part.endswith('-compressed') for part in f.parts[:-1]):
+                dir_name = next(
+                    p for p in f.parts[:-1] if p.endswith('-compressed')
+                )
+                if dir_name not in skipped_dir_files:
+                    skipped_dir_files.append(dir_name)
+            else:
+                filtered.append(f)
+        if skipped_files:
+            print_skipped_files('Skipping already compressed files:', skipped_files)
+        if skipped_dir_files:
+            print_skipped_files(
+                'Skipping directories with already compressed files:',
+                skipped_dir_files
+            )
+        return filtered
 
     def _get_presets(self, dpi: int) -> None:
         try:

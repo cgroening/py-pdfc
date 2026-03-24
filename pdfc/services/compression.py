@@ -76,7 +76,7 @@ class CompressionService:
 
     def get_compare_output_dir(self, pdf_input_path: Path) -> Path:
         """Returns the comparison output directory for `pdf_path`."""
-        return pdf_input_path.parent / pdf_input_path.stem
+        return pdf_input_path.parent / f'{pdf_input_path.stem}-compressed'
 
     def get_presets(self, dpi: int) \
     -> list[tuple[str, CompressionSettings]]:

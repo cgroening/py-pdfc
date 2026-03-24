@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.output import (
-    print_info, print_warning, print_error, clear_lines,
+    print_info, print_warning, print_error, print_skipped_files, clear_lines,
     print_file_section_header, print_result_ok, print_result_error,
     print_summary
 )
@@ -136,19 +136,35 @@ class CompressCommand:
     def _filter_already_compressed_files(self, pdf_files) -> list[Path]:
         """
         If the input path is a directory and the no-skip flag is not set, filter
-        out files that have already been compressed (i.e. files whose name ends
-        with `-compressed.pdf`) and print a warning for each skipped file.
+        out files whose name ends with `-compressed.pdf` or that reside inside a
+        directory ending with `-compressed`, and print a warning panel for each
+        group of skipped files.
         """
-        if self._compress_request.input_path.is_dir() \
-        and not self._compress_request.no_skip:
-            filtered = []
-            for f in pdf_files:
-                if f.stem.endswith('-compressed'):
-                    print_warning(f'Skipping already compressed file: {f.name}')
-                else:
-                    filtered.append(f)
-            pdf_files = filtered
-        return pdf_files
+        if not self._compress_request.input_path.is_dir() \
+        or self._compress_request.no_skip:
+            return pdf_files
+        filtered = []
+        skipped_files = []
+        skipped_dir_files = []
+        for f in pdf_files:
+            if f.stem.endswith('-compressed'):
+                skipped_files.append(f.name)
+            elif any(part.endswith('-compressed') for part in f.parts[:-1]):
+                dir_name = next(
+                    p for p in f.parts[:-1] if p.endswith('-compressed')
+                )
+                if dir_name not in skipped_dir_files:
+                    skipped_dir_files.append(dir_name)
+            else:
+                filtered.append(f)
+        if skipped_files:
+            print_skipped_files('Skipping already compressed files:', skipped_files)
+        if skipped_dir_files:
+            print_skipped_files(
+                'Skipping directories with already compressed files:',
+                skipped_dir_files
+            )
+        return filtered
 
     def _validate_output_path(self):
         """
@@ -239,17 +255,23 @@ class CompressCommand:
                 pdf_file_path, output_path,
                 self._compress_request.compression_settings,
             )
-            original_kb = pdf_file_path.stat().st_size / 1024
-            compressed_kb = output_path.stat().st_size / 1024
-            if original_kb == 0:
-                savings = 0.0
-            else:
-                savings = (1 - compressed_kb / original_kb) * 100
-            print_result_ok(output_path.name, compressed_kb, savings)
+            self._print_compression_result(pdf_file_path, output_path)
             self._successful += 1
         except Exception as e:
             print_result_error(pdf_file_path.name, str(e))
             self._failed += 1
+
+    @staticmethod
+    def _print_compression_result(
+        original_path: Path, output_path: Path
+    ) -> None:
+        original_kb = original_path.stat().st_size / 1024
+        compressed_kb = output_path.stat().st_size / 1024
+        if original_kb == 0:
+            savings = 0.0
+        else:
+            savings = (1 - compressed_kb / original_kb) * 100
+        print_result_ok(output_path.name, compressed_kb, savings)
 
     def _print_summary(self) -> None:
         items = [('Compressed:', f'[green]{self._successful}[/green]')]
