@@ -2,8 +2,11 @@ import sys
 from pathlib import Path
 
 from rich.console import Console
-from rich.table import Table
-from pdfc.cli.output import print_error, print_info, get_arrow_depending_on_sign
+from pdfc.cli.output import (
+    print_error, print_info,
+    print_file_section_header, print_result_ok, print_result_error,
+    print_summary, print_presets_table
+)
 from pdfc.domain.models import CompressionSettings
 from pdfc.services.compression import CompressionService
 
@@ -51,6 +54,7 @@ class CompareCommand:
         self._find_pdf_files_in_path(input_path)
         self._get_presets(dpi)
         self._print_number_of_found_pdf_files_and_presets()
+        print_presets_table(self._presets, input_path=input_path)
         self._process_pdf_files()
         self._show_compare_summary()
 
@@ -89,8 +93,11 @@ class CompareCommand:
             out_dir = self._service.get_compare_output_dir(pdf_file_path)
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            self._print_compare_header(
-                pdf_file_path, pdf_file_path.stat().st_size, self._total_presets
+            print_file_section_header(
+                pdf_file_path, pdf_file_path.stat().st_size
+            )
+            console.print(
+                f'  [dim]Running {self._total_presets} presets …[/dim]\n'
             )
             input_size = pdf_file_path.stat().st_size
 
@@ -107,63 +114,27 @@ class CompareCommand:
                 self._service.compress_file(
                     pdf_file_path, output_path, compression_settings
                 )
-                self._print_preset_ok(
-                    name, input_size, output_path.stat().st_size
-                )
+                output_kb = output_path.stat().st_size / 1024
+                savings = (1 - output_path.stat().st_size / input_size) * 100 \
+                    if input_size else 0
+                print_result_ok(name, output_kb, savings)
                 self._successful += 1
             except Exception as e:
-                self._print_preset_error(name, str(e))
+                print_result_error(name, str(e))
                 self._failed += 1
-
-    @staticmethod
-    def _print_compare_header(
-        pdf_path: Path, pdf_file_size: int, total_presets: int
-    ) -> None:
-        """Prints the header for a single PDF being compared."""
-        pdf_file_size_kb = pdf_file_size / 1024
-        console.rule(
-            f'[cyan bold]{pdf_path.name}[/cyan bold] '
-            f'[cyan]([/cyan][green]{pdf_file_size_kb:.0f} KB[/green][cyan])[/cyan]'
-        )
-        console.print(
-            f'[dim]Running {total_presets} presets …[/dim]\n'
-        )
-
-    @staticmethod
-    def _print_preset_ok(
-        name: str, input_size: int, output_size: int
-    ) -> None:
-        """Prints a success line for one presets."""
-        output_size_kb = output_size / 1024
-        savings = (1 - output_size / input_size) * 100 if input_size else 0
-        console.print(
-            f'  [green]✓[/green] [cyan]{name:<45}[/cyan] '
-            f'[green]{output_size_kb:>8.0f} KB[/green]  '
-            f'({get_arrow_depending_on_sign(savings)}{abs(savings):.0f} %)'
-        )
-
-    @staticmethod
-    def _print_preset_error(name: str, error: str) -> None:
-        """Prints an error line for one preset."""
-        console.print(
-            f'  [red]✗[/red] [cyan]{name:<45}[/cyan] '
-            f'[red]{error}[/red]'
-        )
 
     def _show_compare_summary(self) -> None:
         """
-        Prints the overall summary table after all files and presets
-        have been processed. Shows total files, total presets and counts
-        of successful and failed compressions.
+        Prints the overall summary after all files and presets have been
+        processed. Shows total files, total presets and counts of successful
+        and failed compressions.
         """
-        console.rule()
-        table = Table(show_header=False, box=None)
-        table.add_column('', style='dim')
-        table.add_column('', style='bold')
-        table.add_row('PDF files processed:', str(self._total_files))
-        table.add_row('Presets per file:', str(self._total_presets))
-        table.add_row('Successful:', f'[green]{self._successful}[/green]')
+        items = [
+            ('PDF files processed:', str(self._total_files)),
+            ('Presets per file:',    str(self._total_presets)),
+            ('Successful:',          f'[green]{self._successful}[/green]'),
+        ]
         if self._failed:
-            table.add_row('Failed:', f'[red]{self._failed}[/red]')
-        console.print(table)
+            items.append(('Failed:', f'[red]{self._failed}[/red]'))
+        print_summary(items)
 

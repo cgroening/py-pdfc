@@ -4,8 +4,9 @@ from rich.console import Console
 from rich.table import Table
 from pdfc.cli.compress_parameters import CompressRequest
 from pdfc.cli.output import (
-    print_info, print_success, print_warning, print_error, clear_lines,
-    get_arrow_depending_on_sign
+    print_info, print_warning, print_error, clear_lines,
+    print_file_section_header, print_result_ok, print_result_error,
+    print_summary
 )
 from pdfc.cli.commands.compress_input import InputView
 from pdfc.domain.models import CompressionSettings
@@ -26,6 +27,8 @@ class CompressCommand:
     _input: InputView
     _compress_request: CompressRequest
     _pdf_files: list[Path]
+    _successful: int = 0
+    _failed: int = 0
 
     def __init__(
         self, service: CompressionService, input_view: InputView
@@ -39,8 +42,10 @@ class CompressCommand:
         self._validate_compression_settings()
         self._find_pdf_files_in_input_path()
         self._validate_output_path()
+        self._print_source_target()
         self._print_compression_settings()
         self._process_pdf_files()
+        self._print_summary()
 
     def _read_compression_settings_via_interactive_mode(self) -> None:
         """
@@ -211,70 +216,44 @@ class CompressCommand:
             )
             self._compress_single_file(pdf, output_path)
 
+    def _print_source_target(self) -> None:
+        req = self._compress_request
+        console.print(f'\n  [dim]Source:[/dim] {req.input_path}')
+        if req.input_path_is_directory():
+            console.print(
+                '  [dim]Target:[/dim] [dim](auto-generated per file)[/dim]'
+            )
+        elif req.output_path is not None:
+            console.print(f'  [dim]Target:[/dim] {req.output_path}')
+        else:
+            target = self._service.get_output_path(self._pdf_files[0], None)
+            console.print(f'  [dim]Target:[/dim] {target}')
+
     def _compress_single_file(
         self, pdf_file_path: Path, output_path: Path
     ) -> None:
         """Compresses a single PDF file and prints the result."""
-        compress_request = self._compress_request
-        self._print_paths(
-            source=pdf_file_path,
-            target=output_path,
-            target_is_generated=compress_request.input_path_is_directory()
-        )
+        print_file_section_header(pdf_file_path, pdf_file_path.stat().st_size)
         try:
             self._service.compress_file(
-                pdf_file_path, output_path, compress_request.compression_settings
+                pdf_file_path, output_path,
+                self._compress_request.compression_settings,
             )
-            self._print_compression_result(pdf_file_path, output_path)
+            original_kb = pdf_file_path.stat().st_size / 1024
+            compressed_kb = output_path.stat().st_size / 1024
+            if original_kb == 0:
+                savings = 0.0
+            else:
+                savings = (1 - compressed_kb / original_kb) * 100
+            print_result_ok(output_path.name, compressed_kb, savings)
+            self._successful += 1
         except Exception as e:
-            print_error(f'{pdf_file_path.name}: {e}')
+            print_result_error(pdf_file_path.name, str(e))
+            self._failed += 1
 
-    @staticmethod
-    def _print_compression_result(
-        original_file_path: Path, compressed_file_path: Path
-    ) -> None:
-        """
-        Prints the original and compressed file size and the percentage savings.
-        """
-        original_size_kb = original_file_path.stat().st_size / 1024
-        compressed_size_kb = compressed_file_path.stat().st_size / 1024
-
-        if original_size_kb:
-            savings = (1 - compressed_size_kb / original_size_kb) * 100
-        else:
-            savings = 0.0
-
-        print_success(
-            f'{compressed_file_path.name}  '
-                f'({original_size_kb:.0f} KB → {compressed_size_kb:.0f} KB, '
-            f'{get_arrow_depending_on_sign(savings)}{abs(savings):.0f} %)'
-        )
-
-    @staticmethod
-    def _print_paths(
-        source: Path, target: Path, target_is_generated: bool = False
-    ) -> None:
-        """
-        Prints source and target paths in a formatted table.
-
-        Example
-        -------
-        ┌─────────┬─────────────────────────────────────────────────┐
-        │ Source: │ /Users/cgroening/Downloads/input.pdf            │
-        ├─────────┼─────────────────────────────────────────────────┤
-        │ Target: │ /Users/cgroening/Downloads/input-compressed.pdf │
-        │         │ (auto-generated)                                │
-        └─────────┴─────────────────────────────────────────────────┘
-        """
-        target_str = str(target)
-        if target_is_generated:
-            target_str += '\n[yellow](auto-generated)[/yellow]'
-
-        table = Table(show_header=False, show_lines=True)
-        table.add_column('Label', style='bold magenta', no_wrap=True)
-        table.add_column('Path')
-
-        table.add_row('Source:', str(source))
-        table.add_row('Target:', target_str)
-        console.print(table)
+    def _print_summary(self) -> None:
+        items = [('Compressed:', f'[green]{self._successful}[/green]')]
+        if self._failed:
+            items.append(('Failed:', f'[red]{self._failed}[/red]'))
+        print_summary(items)
 
