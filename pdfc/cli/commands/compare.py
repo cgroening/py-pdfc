@@ -13,7 +13,7 @@ console = Console()
 
 class CompareCommand:
     """
-    CLI command for batch-comparing compression configurations.
+    CLI command for batch-comparing compression presets (configurations).
 
     For each input PDF a subdirectory is created (named after the PDF stem)
     and every configuration variant is written as a separate PDF into it.
@@ -24,13 +24,12 @@ class CompareCommand:
         The service responsible for all compression logic and file handling.
     _pdf_files : list[Path]
         List of PDF files found in the input directory.
-    _configs : list[tuple[str, CompressionSettings]]
-        List of compression configurations to compare, each with a name
-        and settings.
+    _presets : list[tuple[str, CompressionSettings]]
+        List of compression presets to compare, each with a name and settings.
     _total_files : int
         Total number of PDF files found.
-    _total_configs : int
-        Total number of compression configurations to run.
+    _total_presets : int
+        Total number of compression presets to run.
     _successful : int
         Counter for successful compressions.
     _failed : int
@@ -38,9 +37,9 @@ class CompareCommand:
     """
     _service: CompressionService
     _pdf_files: list[Path]
-    _configs: list[tuple[str, CompressionSettings]]
+    _presets: list[tuple[str, CompressionSettings]]
     _total_files: int
-    _total_configs: int
+    _total_presets: int
     _successful: int = 0
     _failed: int = 0
 
@@ -50,8 +49,8 @@ class CompareCommand:
 
     def run(self, input_path: Path, dpi: int) -> None:
         self._find_pdf_files_in_path(input_path)
-        self._get_compare_configs(dpi)
-        self._print_number_of_found_pdf_files_and_configs()
+        self._get_presets(dpi)
+        self._print_number_of_found_pdf_files_and_presets()
         self._process_pdf_files()
         self._show_compare_summary()
 
@@ -69,20 +68,20 @@ class CompareCommand:
         self._pdf_files = pdf_files
         self._total_files = len(pdf_files)
 
-    def _get_compare_configs(self, dpi: int) -> None:
+    def _get_presets(self, dpi: int) -> None:
         try:
-            configs = self._service.get_compare_configs(dpi)
+            presets = self._service.get_presets(dpi)
         except (FileNotFoundError, ValueError) as e:
             print_error(str(e))
             sys.exit(1)
 
-        self._configs = configs
-        self._total_configs = len(configs)
+        self._presets = presets
+        self._total_presets = len(presets)
 
-    def _print_number_of_found_pdf_files_and_configs(self) -> None:
+    def _print_number_of_found_pdf_files_and_presets(self) -> None:
         print_info(
             f'Found {self._total_files} PDF file(s) — '
-            f'running {self._total_configs} configurations each.'
+            f'running {self._total_presets} presets each.'
         )
 
     def _process_pdf_files(self):
@@ -91,34 +90,34 @@ class CompareCommand:
             out_dir.mkdir(parents=True, exist_ok=True)
 
             self._print_compare_header(
-                pdf_file_path, pdf_file_path.stat().st_size, self._total_configs
+                pdf_file_path, pdf_file_path.stat().st_size, self._total_presets
             )
             input_size = pdf_file_path.stat().st_size
 
-            self._run_configs_for_file(pdf_file_path, input_size, out_dir)
+            self._run_presets_for_file(pdf_file_path, input_size, out_dir)
 
             console.print()
 
-    def _run_configs_for_file(
+    def _run_presets_for_file(
         self, pdf_file_path: Path, input_size: int, out_dir: Path
     ) -> None:
-        for name, compression_settings in self._configs:
+        for name, compression_settings in self._presets:
             output_path = out_dir / f'{name}.pdf'
             try:
                 self._service.compress_file(
                     pdf_file_path, output_path, compression_settings
                 )
-                self._print_compare_config_ok(
+                self._print_preset_ok(
                     name, input_size, output_path.stat().st_size
                 )
                 self._successful += 1
             except Exception as e:
-                self._print_compare_config_error(name, str(e))
+                self._print_preset_error(name, str(e))
                 self._failed += 1
 
     @staticmethod
     def _print_compare_header(
-        pdf_path: Path, pdf_file_size: int, total_configs: int
+        pdf_path: Path, pdf_file_size: int, total_presets: int
     ) -> None:
         """Prints the header for a single PDF being compared."""
         pdf_file_size_kb = pdf_file_size / 1024
@@ -127,14 +126,14 @@ class CompareCommand:
             f'[cyan]([/cyan][green]{pdf_file_size_kb:.0f} KB[/green][cyan])[/cyan]'
         )
         console.print(
-            f'[dim]Running {total_configs} configurations …[/dim]\n'
+            f'[dim]Running {total_presets} presets …[/dim]\n'
         )
 
     @staticmethod
-    def _print_compare_config_ok(
+    def _print_preset_ok(
         name: str, input_size: int, output_size: int
     ) -> None:
-        """Prints a success line for one compare configuration."""
+        """Prints a success line for one presets."""
         output_size_kb = output_size / 1024
         savings = (1 - output_size / input_size) * 100 if input_size else 0
         console.print(
@@ -144,8 +143,8 @@ class CompareCommand:
         )
 
     @staticmethod
-    def _print_compare_config_error(name: str, error: str) -> None:
-        """Prints an error line for one compare configuration."""
+    def _print_preset_error(name: str, error: str) -> None:
+        """Prints an error line for one preset."""
         console.print(
             f'  [red]✗[/red] [cyan]{name:<45}[/cyan] '
             f'[red]{error}[/red]'
@@ -153,8 +152,8 @@ class CompareCommand:
 
     def _show_compare_summary(self) -> None:
         """
-        Prints the overall summary table after all files and configurations
-        have been processed. Shows total files, total configurations and counts
+        Prints the overall summary table after all files and presets
+        have been processed. Shows total files, total presets and counts
         of successful and failed compressions.
         """
         console.rule()
@@ -162,7 +161,7 @@ class CompareCommand:
         table.add_column('', style='dim')
         table.add_column('', style='bold')
         table.add_row('PDF files processed:', str(self._total_files))
-        table.add_row('Configurations per file:', str(self._total_configs))
+        table.add_row('Presets per file:', str(self._total_presets))
         table.add_row('Successful:', f'[green]{self._successful}[/green]')
         if self._failed:
             table.add_row('Failed:', f'[red]{self._failed}[/red]')

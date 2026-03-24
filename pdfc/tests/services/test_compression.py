@@ -137,13 +137,13 @@ class TestCompressFile:
         assert exc_info.value._output_path == out
 
 
-class TestGetCompareConfigs:
+class TestGetPresets:
     def test_returns_name_settings_pairs(self):
         presets = MagicMock(spec=PresetsStorage)
         presets.load.return_value = [
             {'name': 'preset-a', '_mode': 'bw', '_jpeg_quality': 20}
         ]
-        result = make_service(presets=presets).get_compare_configs(dpi=200)
+        result = make_service(presets=presets).get_presets(dpi=200)
         assert len(result) == 1
         name, settings = result[0]
         assert name == 'preset-a'
@@ -152,23 +152,23 @@ class TestGetCompareConfigs:
     def test_applies_dpi_fallback_when_not_in_preset(self):
         presets = MagicMock(spec=PresetsStorage)
         presets.load.return_value = [{'name': 'p', '_mode': 'color'}]
-        _, settings = make_service(presets=presets).get_compare_configs(dpi=72)[0]
+        _, settings = make_service(presets=presets).get_presets(dpi=72)[0]
         assert settings.dpi == 72
 
     def test_does_not_override_preset_dpi(self):
         presets = MagicMock(spec=PresetsStorage)
         presets.load.return_value = [{'name': 'p', '_mode': 'color', '_dpi': 600}]
-        _, settings = make_service(presets=presets).get_compare_configs(dpi=72)[0]
+        _, settings = make_service(presets=presets).get_presets(dpi=72)[0]
         assert settings.dpi == 600
 
-    def test_returns_multiple_configs(self):
+    def test_returns_multiple_presets(self):
         presets = MagicMock(spec=PresetsStorage)
         presets.load.return_value = [
             {'name': 'a', '_mode': 'bw'},
             {'name': 'b', '_mode': 'gray'},
             {'name': 'c', '_mode': 'color'},
         ]
-        result = make_service(presets=presets).get_compare_configs(dpi=300)
+        result = make_service(presets=presets).get_presets(dpi=300)
         assert len(result) == 3
         assert [name for name, _ in result] == ['a', 'b', 'c']
 
@@ -176,10 +176,10 @@ class TestGetCompareConfigs:
         presets = MagicMock(spec=PresetsStorage)
         presets.load.side_effect = FileNotFoundError('no file')
         with pytest.raises(FileNotFoundError):
-            make_service(presets=presets).get_compare_configs(dpi=300)
+            make_service(presets=presets).get_presets(dpi=300)
 
     def test_propagates_value_error(self):
         presets = MagicMock(spec=PresetsStorage)
         presets.load.side_effect = ValueError('bad yaml')
         with pytest.raises(ValueError):
-            make_service(presets=presets).get_compare_configs(dpi=300)
+            make_service(presets=presets).get_presets(dpi=300)

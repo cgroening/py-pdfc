@@ -40,36 +40,36 @@ class TestFindPdfFilesInPath:
         assert cmd._total_files == 2
 
 
-class TestGetCompareConfigs:
+class TestGetPresets:
     def test_exits_with_code_1_on_file_not_found(self):
         service = MagicMock(spec=CompressionService)
-        service.get_compare_configs.side_effect = FileNotFoundError('no file')
+        service.get_presets.side_effect = FileNotFoundError('no file')
         cmd = make_command(service=service)
 
         with pytest.raises(SystemExit) as exc_info:
-            cmd._get_compare_configs(dpi=300)
+            cmd._get_presets(dpi=300)
         assert exc_info.value.code == 1
 
     def test_exits_with_code_1_on_value_error(self):
         service = MagicMock(spec=CompressionService)
-        service.get_compare_configs.side_effect = ValueError('bad yaml')
+        service.get_presets.side_effect = ValueError('bad yaml')
         cmd = make_command(service=service)
 
         with pytest.raises(SystemExit) as exc_info:
-            cmd._get_compare_configs(dpi=300)
+            cmd._get_presets(dpi=300)
         assert exc_info.value.code == 1
 
-    def test_stores_configs_and_total_on_success(self):
-        configs = [('a', CompressionSettings()), ('b', CompressionSettings())]
+    def test_stores_presets_and_total_on_success(self):
+        presets = [('a', CompressionSettings()), ('b', CompressionSettings())]
         service = MagicMock(spec=CompressionService)
-        service.get_compare_configs.return_value = configs
+        service.get_presets.return_value = presets
         cmd = make_command(service=service)
-        cmd._get_compare_configs(dpi=300)
-        assert cmd._configs == configs
-        assert cmd._total_configs == 2
+        cmd._get_presets(dpi=300)
+        assert cmd._presets == presets
+        assert cmd._total_presets == 2
 
 
-class TestRunConfigsForFile:
+class TestRunPresetsForFile:
     def test_increments_successful_counter(self, tmp_path):
         pdf = tmp_path / 'in.pdf'
         pdf.write_bytes(b'x' * 100)
@@ -77,7 +77,7 @@ class TestRunConfigsForFile:
         out_dir.mkdir()
 
         settings = CompressionSettings()
-        configs = [('preset-a', settings), ('preset-b', settings)]
+        presets = [('preset-a', settings), ('preset-b', settings)]
 
         service = MagicMock(spec=CompressionService)
 
@@ -87,10 +87,10 @@ class TestRunConfigsForFile:
         service.compress_file.side_effect = fake_compress
 
         cmd = make_command(service=service)
-        cmd._configs = configs
+        cmd._presets = presets
         cmd._successful = 0
         cmd._failed = 0
-        cmd._run_configs_for_file(pdf, pdf.stat().st_size, out_dir)
+        cmd._run_presets_for_file(pdf, pdf.stat().st_size, out_dir)
 
         assert cmd._successful == 2
         assert cmd._failed == 0
@@ -101,12 +101,12 @@ class TestRunConfigsForFile:
         out_dir = tmp_path / 'out'
         out_dir.mkdir()
 
-        # Pre-create the output file for the successful config so that
+        # Pre-create the output file for the successful preset so that
         # output_path.stat() inside the command works after the mock returns.
         (out_dir / 'first.pdf').write_bytes(b'x' * 80)
 
         settings = CompressionSettings()
-        configs = [('first', settings), ('second', settings)]
+        presets = [('first', settings), ('second', settings)]
 
         service = MagicMock(spec=CompressionService)
         service.compress_file.side_effect = [
@@ -115,16 +115,16 @@ class TestRunConfigsForFile:
         ]
 
         cmd = make_command(service=service)
-        cmd._configs = configs
+        cmd._presets = presets
         cmd._successful = 0
         cmd._failed = 0
-        cmd._run_configs_for_file(pdf, pdf.stat().st_size, out_dir)
+        cmd._run_presets_for_file(pdf, pdf.stat().st_size, out_dir)
 
         assert cmd._successful == 1
         assert cmd._failed == 1
 
     def test_continues_after_failure(self, tmp_path):
-        """A failed config must not abort remaining configs."""
+        """A failed preset must not abort remaining presets."""
         pdf = tmp_path / 'in.pdf'
         pdf.write_bytes(b'x' * 100)
         out_dir = tmp_path / 'out'
@@ -133,7 +133,7 @@ class TestRunConfigsForFile:
         (out_dir / 'second.pdf').write_bytes(b'x' * 80)
 
         settings = CompressionSettings()
-        configs = [('first', settings), ('second', settings)]
+        presets = [('first', settings), ('second', settings)]
 
         service = MagicMock(spec=CompressionService)
         service.compress_file.side_effect = [
@@ -142,23 +142,23 @@ class TestRunConfigsForFile:
         ]
 
         cmd = make_command(service=service)
-        cmd._configs = configs
+        cmd._presets = presets
         cmd._successful = 0
         cmd._failed = 0
-        cmd._run_configs_for_file(pdf, pdf.stat().st_size, out_dir)
+        cmd._run_presets_for_file(pdf, pdf.stat().st_size, out_dir)
 
         assert service.compress_file.call_count == 2
         assert cmd._successful == 1
         assert cmd._failed == 1
 
-    def test_uses_correct_output_path_per_config(self, tmp_path):
+    def test_uses_correct_output_path_per_preset(self, tmp_path):
         pdf = tmp_path / 'in.pdf'
         pdf.write_bytes(b'x' * 100)
         out_dir = tmp_path / 'out'
         out_dir.mkdir()
 
         settings = CompressionSettings()
-        configs = [('config-one', settings)]
+        presets = [('preset-one', settings)]
 
         service = MagicMock(spec=CompressionService)
 
@@ -168,12 +168,12 @@ class TestRunConfigsForFile:
         service.compress_file.side_effect = fake_compress
 
         cmd = make_command(service=service)
-        cmd._configs = configs
+        cmd._presets = presets
         cmd._successful = 0
         cmd._failed = 0
-        cmd._run_configs_for_file(pdf, pdf.stat().st_size, out_dir)
+        cmd._run_presets_for_file(pdf, pdf.stat().st_size, out_dir)
 
-        expected_out = out_dir / 'config-one.pdf'
+        expected_out = out_dir / 'preset-one.pdf'
         service.compress_file.assert_called_once_with(
             pdf, expected_out, settings
         )
