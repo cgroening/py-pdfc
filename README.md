@@ -260,3 +260,21 @@ threshold to control where the black/white boundary falls.
 |---|---|---|---|---|
 | Sharpen | 0.0 (off) | 1.3–2.0 | 2.5 | 3.0 |
 | Contrast | 0.0 (grey) | 1.3–2.0 | 2.5 | 3.0 |
+
+## Planned features
+
+### v0.1 – Initial release
+
+- [ ] Improve/clean output messages when processing files and presets
+
+### v0.2 – Better file handling
+
+- [ ] Skip files with the suffix `-compressed.pdf` to avoid re-processing already compressed files, unless flag `--no-skip` is set
+- [ ] Skip presets for color mode if input file is B&W or grayscale
+
+### v0.3 – Presets management
+
+- [ ] `presets.yaml`: Field to set one preset as default for `compress` command, warn if missing or multiple defaults
+- [ ] Add `--preset` option to `compress` command to specify a preset from the presets file, e.g. `pdfc compress input.pdf --preset bw-300`
+- [ ] Add command `list-presets` which lets the user interactively view, add, edit and delete presets in the presets file
+- [ ] Add command `preset` which lets the user select a preset from the presets file and applies it to one or more PDF files
