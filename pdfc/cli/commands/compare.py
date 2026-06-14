@@ -88,7 +88,7 @@ class CompareCommand:
 
     def _print_number_of_found_pdf_files_and_presets(self) -> None:
         print_info(
-            f'Found {self._total_files} PDF file(s) — '
+            f'Found {self._total_files} PDF file(s) - '
             f'running {self._total_presets} presets each.'
         )
 

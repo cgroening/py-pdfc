@@ -119,7 +119,7 @@ class TestPrintCompressionResult:
         original.write_bytes(b'x' * 1000)
         compressed.write_bytes(b'x' * 600)
 
-        # Should not raise — savings = 40%
+        # Should not raise - savings = 40%
         CompressCommand._print_compression_result(original, compressed)
 
     def test_handles_zero_original_size(self, tmp_path):
@@ -127,7 +127,7 @@ class TestPrintCompressionResult:
         compressed = tmp_path / 'compressed.pdf'
         original.write_bytes(b'')
         compressed.write_bytes(b'')
-        # savings should be 0.0 — no ZeroDivisionError
+        # savings should be 0.0 - no ZeroDivisionError
         CompressCommand._print_compression_result(original, compressed)
 
 
@@ -145,7 +145,7 @@ class TestCompressSingleFile:
         cmd = make_command(service=service)
         cmd._compress_request = make_request(input_path=pdf)
 
-        # Should not raise SystemExit — loop continues
+        # Should not raise SystemExit - loop continues
         cmd._compress_single_file(pdf, out)
 
     def test_does_not_exit_on_unexpected_exception(self, tmp_path):
